@@ -1,4 +1,4 @@
-import React, { useState, Component, useLayoutEffect, useEffect } from "react";
+import React, { useState, Component, useLayoutEffect, useEffect ,useContext } from "react";
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import ModalCouponOrder from "./modal.coupon.order";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import CouponComponentOrder from "../../components/Coupon/CouponComponentOrder";
 import useAuth from "../../Services/auth.services";
-import { AuthStatus } from "../../Services/AuthContext";
+import { AuthContext } from "../../Services/AuthContext";
 import FlashMessage, {
   showMessage,
   renderMessage,
@@ -25,18 +25,17 @@ export default function CouponOrder({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [isclick, setIsClick] = useState(false);
   const { GetVoucher, search_voucher_and_add } = useAuth();
-  const { state, dispatch } = AuthStatus();
+  const {authState, dispatch } = useContext(AuthContext);
 
   const fetchdata = () => {
-    state.isLoggedIn
-      ? GetVoucher()
+    GetVoucher()
           .then((result) => {
             setData(result);
           })
           .catch((error) => {
             console.error(error);
           })
-      : null;
+      
   };
   useEffect(() => {
     fetchdata();
@@ -102,49 +101,50 @@ export default function CouponOrder({ navigation }) {
     setSelectedItems(newSelectedItems);
     dispatch({ type: "USE_VOUCHER", payload: newSelectedItems });
   };
-  return state.isLoggedIn ? (
-    <ScrollView style={styles.container}>
-      <View style={styles.modal}>
-        <ModalCouponOrder
-          check={isclick}
-          handlePress={() => setIsClick(false)}
-          fun_search={handlePresSearch}
-        />
-      </View>
+   return
+  //  state.isLoggedInContext ? (
+  //   <ScrollView style={styles.container}>
+  //     <View style={styles.modal}>
+  //       <ModalCouponOrder
+  //         check={isclick}
+  //         handlePress={() => setIsClick(false)}
+  //         fun_search={handlePresSearch}
+  //       />
+  //     </View>
 
-      <View style={styles.header}>
-        <Pressable style={styles.textHeader} onPress={fun_handlePress}>
-          <Image
-            source={{ uri: "https://iili.io/JqAuyDN.png" }}
-            style={styles.img}
-          />
-          <Text style={styles.text}>Nhập mã voucher</Text>
-        </Pressable>
-      </View>
+  //     <View style={styles.header}>
+  //       <Pressable style={styles.textHeader} onPress={fun_handlePress}>
+  //         <Image
+  //           source={{ uri: "https://iili.io/JqAuyDN.png" }}
+  //           style={styles.img}
+  //         />
+  //         <Text style={styles.text}>Nhập mã voucher</Text>
+  //       </Pressable>
+  //     </View>
 
-      <View>
-        {data &&
-          data.map((item, index) => (
-            <CouponComponentOrder
-              key={index}
-              dataVouchers={item}
-              handlePress={() => handlePresDetailProduct(item)}
-              checkvoucher={selectedItems.some(
-                (selectedItem) =>
-                  selectedItem.voucher_id === item.voucher_id &&
-                  selectedItem.reward_type === item.reward_type
-              )}
-            />
-          ))}
-      </View>
-    </ScrollView>
-  ) : (
+  //     <View>
+  //       {data &&
+  //         data.map((item, index) => (
+  //           <CouponComponentOrder
+  //             key={index}
+  //             dataVouchers={item}
+  //             handlePress={() => handlePresDetailProduct(item)}
+  //             checkvoucher={selectedItems.some(
+  //               (selectedItem) =>
+  //                 selectedItem.voucher_id === item.voucher_id &&
+  //                 selectedItem.reward_type === item.reward_type
+  //             )}
+  //           />
+  //         ))}
+  //     </View>
+  //   </ScrollView>
+  // ) : (
     <View style={styles.error}>
       <Text style={{ fontSize: 20, fontWeight: "bold" }}>
         Bạn cần đăng nhập để xem !
       </Text>
     </View>
-  );
+  
 }
 const styles = StyleSheet.create({
   error: {

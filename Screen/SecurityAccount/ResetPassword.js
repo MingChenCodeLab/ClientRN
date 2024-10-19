@@ -2,9 +2,9 @@ import React, { useState, useLayoutEffect,useEffect } from 'react';
 import { StyleSheet, View, Text, TextInput,Image, TouchableOpacity, ToastAndroid } from 'react-native';
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import  useAuth  from "../../Services/auth.services";
-import { AuthStatus } from "../../Services/AuthContext";
+import { AuthContext } from "../../Services/AuthContext";
 const ResetPassword = ({ isVisible, navigation }) => {
-  const {state}=AuthStatus();
+  const {authState}=useContext(AuthContext);
   const [email,setmail]=useState(null); 
   const [phone,setphone]=useState(null); 
   const { InfoAuth,CheckOtp } = useAuth()
@@ -14,7 +14,7 @@ const ResetPassword = ({ isVisible, navigation }) => {
       ToastAndroid.show("Gửi mã xác nhận thành công", ToastAndroid.SHORT);
       
     }, 700);
-   console.log( "huhuihuih",state.userInfo);
+   console.log( "huhuihuih",authState.userInfo);
     if (data.name === "gmail") {
       try {
         setTimeout(() => {
@@ -22,7 +22,7 @@ const ResetPassword = ({ isVisible, navigation }) => {
             CheckOtp({ email: email });
           }
           else {
-            CheckOtp({ email: state.userInfo.email });
+            CheckOtp({ email: authState.userInfo.email });
           }
           
         }, 3000);

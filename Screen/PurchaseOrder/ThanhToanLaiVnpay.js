@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect ,useContext } from "react";
 import { View, TouchableOpacity, StyleSheet, ToastAndroid } from "react-native";
 import { PulseIndicator } from "react-native-indicators";
 import { useNavigation } from "@react-navigation/native";
@@ -7,8 +7,8 @@ import { WebView } from "react-native-webview";
 import useAuth from "../../Services/auth.services";
 import axios from "axios";
 import Config from "../../Api/Config";
-import { AuthStatus } from "../../Services/AuthContext";
-import authHeader from "../../Services/auth.header";
+import { AuthContext } from "../../Services/AuthContext";
+import authHeader from "../../Services/HeaderAuth/auth.header";
 
 const ThanhToanLaiVnpay = (props) => {
   const navigation = useNavigation();

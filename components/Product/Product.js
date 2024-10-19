@@ -1,168 +1,106 @@
-import React from "react";
+import React, { useContext } from "react";
 import {
   Text,
   View,
   Image,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
 } from "react-native";
-import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { faCartShopping } from "@fortawesome/free-solid-svg-icons";
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from "@react-navigation/native";
+import { AuthContext } from "../../Services/AuthContext";
+import FavoriteButton from "../Header/FavoriteButton";
 
 export default function Product(props) {
+  const { authState } = useContext(AuthContext);
+  const navigation = useNavigation();
   const { dataProd, handlePress } = props;
-  const fun_handlePress = () => {
-    handlePress ? handlePress(dataProd) : null;
+
+  const handlePressProduct = () => {
+    if (authState.userToken == null) {
+      navigation.navigate("Login");
+    } else {
+      navigation.navigate("ProductDetail", { product: dataProd });
+    }
   };
 
   let tensp =
-    dataProd.name.length > 10
+    dataProd.name.length > 25
       ? dataProd.name.slice(0, 25) + "..."
       : dataProd.name;
-  let totalQuantitySold = dataProd.total_quantity_sold;
-  if (totalQuantitySold === null) {
-    totalQuantitySold = 0;
-  } else {
-    totalQuantitySold = parseInt(totalQuantitySold);
-  }
+
+  let totalQuantitySold = dataProd.total_quantity_sold || 0;
 
   return (
-    <TouchableOpacity onPress={fun_handlePress} style={styles.container}>
-      <View style={styles.shadow}>
-        <Image source={{ uri: dataProd.thumbnail }} style={styles.img} />
-        <Text style={styles.tensp}>{tensp}</Text>
-
-        <View style={styles.itemsolid}>
-          <Text style={styles.daban}>Đã bán</Text>
-          <Text style={styles.item_solid_quantity}>{totalQuantitySold}</Text>
-        </View>
-        <View style={styles.item_1}>
-          <View style={styles.price}>
-            <Text style={styles.kihieu}>đ</Text>
-            <Text style={styles.item_price}>
-              {parseFloat(dataProd.price).toLocaleString("vi-VN")}
-            </Text>
-          </View>
-          <View>
-            <TouchableOpacity
-              style={styles.addToCart}
-              onPress={() => {
-                alert("Chức năng đang phát triển");
-              }}
-            >
-              <FontAwesomeIcon
-                style={styles.iconAddToCart}
-                icon={faCartShopping}
-                size={20}
-                color="rgba(177, 177, 177, 0.72)"
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+    <TouchableOpacity
+      onPress={handlePressProduct}
+      style={styles.shoeItem}
+    >
+      <FavoriteButton productId={dataProd.id} style={styles.favoriteButton} />
+      <Image source={{ uri: dataProd.thumbnail }} style={styles.shoeImage} />
+      <Text style={styles.bestSeller}>BÁN CHẠY</Text>
+      <Text style={styles.shoeName}>{tensp}</Text>
+      <Text style={styles.shoePrice}>${dataProd.price}</Text>
+      <TouchableOpacity style={styles.addButton}>
+        <Ionicons name="add" size={24} color="#FFF" />
+      </TouchableOpacity>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    borderRadius: 10,
-    flex: 1,
-    overflow: "hidden",
-  },
-
-  shadow: {
-    borderRadius: 10,
-    overflow: "hidden",
-    position: "relative",
-    backgroundColor: "rgba(255, 255, 255, 0.72)",
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 0 },
-  },
-  item_1: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  shoeItem: {
+    width: "48%",
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
     alignItems: "center",
-    marginStart: 5,
-    marginEnd: 5,
-    marginTop: 5,
-    marginBottom: 5,
-  },
-  img: {
-    aspectRatio: 1,
-    width: "100%",
-    borderTopRightRadius: 10,
-    borderTopLeftRadius: 10,
-  },
-  tensp: {
-    fontSize: 15,
-    marginBottom: 0,
-    fontWeight: "600",
-    marginVertical: 3,
-    marginLeft: 10,
-    height: 45,
-  },
-  price: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    marginStart: 5,
-    marginEnd: 5,
-    marginLeft: 11,
-  },
-  item_price: {
-    color: "#F60000",
-    fontStyle: "normal",
-    fontWeight: "600",
-
-    fontSize: 15,
-  },
-  kihieu: {
-    color: "red",
-    fontWeight: "600",
-    fontSize: 15,
-    textDecorationLine: "underline",
-    paddingRight: 3,
-  },
-  addToCart: {
-    position: "absolute",
-    right: 5,
-    bottom: -10,
-
-    borderRadius: 50,
+    marginHorizontal: 4,
     borderWidth: 1,
-    width: 25,
-    height: 25,
-    backgroundColor: "white",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 15,
+    borderColor: "#E0E0E0", // Thêm đường viền thay vì đổ bóng
   },
-  iconAddToCart: {
-    fontSize: 15,
-    color: "red",
+  favoriteButton: {
+    position: "absolute",
+    right: 8,
+    top: 8,
+    zIndex: 1,
   },
-  itemsolid: {
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    alignItems: "center",
-    marginStart: 10,
-    marginEnd: 5,
-    marginTop: 5,
-    marginBottom: 5,
+  shoeImage: {
+    width: "100%",
+    height: 120,
+    resizeMode: "contain",
+    marginBottom: 8,
+    backgroundColor: "#F5F5F5",
+    borderRadius: 8,
   },
-  daban: {
+  bestSeller: {
+    backgroundColor: "#4A7AFF",
+    color: "#FFF",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
     fontSize: 12,
-    color: "rgba(0, 0, 0, 0.72)",
-    fontWeight: "600",
-    marginEnd: 5,
+    marginBottom: 4,
   },
-  item_solid_quantity: {
-    fontSize: 12,
-    color: "rgba(0, 0, 0, 0.72)",
-    fontWeight: "600",
-    marginEnd: 5,
+  shoeName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center", // Căn giữa tên sản phẩm
+    marginBottom: 4,
+  },
+  shoePrice: {
+    fontSize: 14,
+    color: "#4A7AFF",
+    marginBottom: 8,
+    textAlign: "center", // Căn giữa giá sản phẩm
+  },
+  addButton: {
+    backgroundColor: "#4A7AFF",
+    borderRadius: 8,
+    padding: 8,
+    position: "absolute",
+    bottom: 8,
+    right: 8,
   },
 });

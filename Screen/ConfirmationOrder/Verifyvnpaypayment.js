@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect ,useContext } from "react";
 import { View, TouchableOpacity, StyleSheet, ToastAndroid } from "react-native";
 import { PulseIndicator } from "react-native-indicators";
 import { useNavigation } from "@react-navigation/native";
@@ -7,50 +7,26 @@ import { WebView } from "react-native-webview";
 import useAuth from "../../Services/auth.services";
 import axios from "axios";
 import Config from "../../Api/Config";
-import { AuthStatus } from "../../Services/AuthContext";
-import authHeader from "../../Services/auth.header";
+import { AuthContext } from "../../Services/AuthContext";
+import authHeader from "../../Services/HeaderAuth/auth.header";
 
 const VerifyVnPayPayment = (props) => {
   const navigation = useNavigation();
   const [webViewUrl, setWebViewUrl] = useState(null);
   const { Orders } = useAuth();
-  const { state, dispatch } = AuthStatus();
-  const {
-    cartItems,
-    cartId,
-    totalPrice,
-    shippingAddressId,
-    paymentMethodId,
-    voucherId,
-    freightCost,
-    orderId,
-  } = props.route.params;
-  console.log("cartItems", cartItems, cartId, totalPrice, shippingAddressId);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const data = await Orders(props.route.params);
-        if (data.message === "ok") {
-          const usedVoucherIds = state.UseVoucher.map(
-            (voucher) => voucher.voucher_id
-          );
-
-          // Filter out the used vouchers from the state.UseVoucher array
-          const updatedVouchers = state.UseVoucher.filter(
-            (voucher) => !usedVoucherIds.includes(voucher.voucher_id)
-          );
-
-          // Update the state with the remaining vouchers
-          dispatch({ type: "USE_VOUCHER", payload: updatedVouchers });
-          console.log("orderId", data);
-
+        console.log(props.route.params);
+        if (data) {
           const headers = await authHeader();
           const response = await axios.post(
             `${Config.API_BASE_URL}/payment/vnpay/create_payment_url`,
             {
-              orderId: data.orderId,
-              amount: totalPrice,
+              orderId: data?.orderId,
+              amount: props.route.params.totalPrice,
               bankCode: "VNBANK",
               language: "vn",
             },

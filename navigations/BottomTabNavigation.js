@@ -1,39 +1,28 @@
-import React, { useRef, useEffect } from "react";
-import { TouchableWithoutFeedback } from "react-native";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import * as Animatable from "react-native-animatable";
-import { createMaterialBottomTabNavigator } from "@react-navigation/material-bottom-tabs";
-import Home from "../Screen/Home/Home";
-import Cart from "../Screen/Cart/Cart";
-import LikeProducts from "../Screen/Informations/LikeProducts";
-import Notification from "../Screen/Notification/Notification";
-import Profile from "../Screen/Informations/Profile";
-import CartBadge from "../components/Cart/CartBadge";
-import { View, Text, StyleSheet } from "react-native";
-import { AuthStatus } from "../Services/AuthContext";
+import React from 'react';
+import { View, StyleSheet, TouchableWithoutFeedback } from 'react-native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { createMaterialBottomTabNavigator } from '@react-navigation/material-bottom-tabs';
+import Home from '../Screen/Home/Home';
+import Cart from '../Screen/Cart/Cart';
+import LikeProducts from '../Screen/Informations/LikeProducts';
+import Notification from '../Screen/Notification/Notification';
+import Profile from '../Screen/Informations/Profile';
+import CartBadge from '../components/Cart/CartBadge';
+import NotiBadge from '../components/Notification/NotiBadge';
 
 const Tab = createMaterialBottomTabNavigator();
 
-const NotificationBadge = () => {
-  const { state } = AuthStatus();
-  const totalCartItems = state.infoCart[0]?.total_cart_items;
-
-  return (
-    <>
-      {totalCartItems > 0 && (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{totalCartItems}</Text>
-        </View>
-      )}
-    </>
-  );
-};
+const TabButton = React.memo(({ children, onPress }) => (
+  <TouchableWithoutFeedback onPress={onPress}>
+    <View style={styles.centeredButton}>{children}</View>
+  </TouchableWithoutFeedback>
+));
 
 const BottomTabNavigation = () => {
   return (
     <Tab.Navigator
       initialRouteName="Home"
-      activeColor="#e91e63"
+      activeColor="#00C4FF"
       inactiveColor="#000000"
       barStyle={styles.tabBar}
       labeled={true}
@@ -43,13 +32,9 @@ const BottomTabNavigation = () => {
         name="Home"
         component={Home}
         options={{
-          tabBarLabel: "Home",
+          tabBarLabel: 'Home',
           tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons
-              name="home-outline"
-              color={color}
-              size={26}
-            />
+            <MaterialCommunityIcons name="home-outline" color={color} size={26} />
           ),
         }}
       />
@@ -57,8 +42,7 @@ const BottomTabNavigation = () => {
         name="LikeProducts"
         component={LikeProducts}
         options={{
-          tabBarShowLabel: false,
-          tabBarLabel: "Yêu thích",
+          tabBarLabel: 'Yêu thích',
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons name="heart" color={color} size={26} />
           ),
@@ -68,45 +52,34 @@ const BottomTabNavigation = () => {
         name="Cart"
         component={Cart}
         options={{
-          tabBarShowLabel: false,
-          tabBarLabel: "Giỏ hàng",
-          
+          tabBarLabel: 'Giỏ hàng',
           tabBarIcon: ({ color }) => (
             <View style={styles.iconWrapper}>
-              <MaterialCommunityIcons name="shopping" color={color} size={24} />
-              {/* <NotificationBadge /> */}
+              <MaterialCommunityIcons name="shopping" color={color} size={26} />
               <CartBadge />
             </View>
           ),
-          tabBarButton: (props) => (
-            <TabButton {...props}>
-            
-            </TabButton>
-          ),
+          tabBarButton: (props) => <TabButton {...props} />,
         }}
       />
-      {/* <Tab.Screen
+      <Tab.Screen
         name="Notification"
         component={Notification}
         options={{
-          tabBarShowLabel: false,
-          tabBarLabel: "Thông báo",
+          tabBarLabel: 'Thông báo',
           tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons
-              name="bell-outline"
-              color={color}
-              size={26}
-            />
+            <View style={styles.iconWrapper}>
+              <MaterialCommunityIcons name="bell-outline" color={color} size={26} />
+              <NotiBadge />
+            </View>
           ),
         }}
-      /> */}
+      />
       <Tab.Screen
         name="Profile"
         component={Profile}
         options={{
-          tabBarShowLabel: false,
-          headerShown: false,
-          tabBarLabel: "Tôi",
+          tabBarLabel: 'Tôi',
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons name="account" color={color} size={26} />
           ),
@@ -115,32 +88,22 @@ const BottomTabNavigation = () => {
     </Tab.Navigator>
   );
 };
+
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: "#ffffff",
+    backgroundColor: '#f7f7f9',
     paddingBottom: 5,
     height: 65,
   },
-  badge: {
-    position: "absolute",
-    right: -6,
-    top: -3,
-    backgroundColor: "red",
-    borderRadius: 8.5,
-    width: 17,
-    height: 17,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  badgeText: {
-    color: "white",
-    fontSize: 10,
-    fontWeight: "bold",
-  },
   iconWrapper: {
-    width: 24,
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  centeredButton: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

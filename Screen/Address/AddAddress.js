@@ -6,27 +6,37 @@ import {
   TouchableOpacity,
   View,
   Alert,
-  Image,
   Switch,
-  ToastAndroid
+  ToastAndroid,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
-import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
-import AddressConfirm from "./addressConfirm";
+import MapView, { Marker } from "react-native-maps";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
+import axios from "axios";
+import AddressConfirm from "./addressConfirm";
 import useAuth from "../../Services/auth.services";
+
 const AddAddress = ({ navigation }) => {
   const [isEnabled, setIsEnabled] = useState(false);
-  const [address, setAddress] = useState("");
-  const toggleSwitch = () => setIsEnabled((previousState) => !previousState);
+  const [address, setAddress] = useState({});
+  const [region, setRegion] = useState({
+    latitude: 21.0285, // Default to Hanoi
+    longitude: 105.8542,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  });
+  const [showMap, setShowMap] = useState(false);
   const { CreateAddress } = useAuth();
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerTitle: "Thêm địa chỉ",
       headerLeft: () => (
         <TouchableOpacity
           onPress={() => navigation.navigate("BottomTabNavigation")}
-          style={{ marginLeft: 5, marginRight: 10 }}
+          style={styles.iconContainer}
         >
           <FontAwesome
             name="arrow-left"
@@ -37,7 +47,7 @@ const AddAddress = ({ navigation }) => {
         </TouchableOpacity>
       ),
     });
-  }, []);
+  }, [navigation]);
 
   const googlePlacesRef = useRef();
   const phoneRef = useRef();
@@ -52,29 +62,99 @@ const AddAddress = ({ navigation }) => {
     return phoneRegex.test(phoneNumber);
   };
 
+  const filterAddress = (address) => {
+    // Loại bỏ các ký tự đặc biệt và số nhà
+    return address.replace(/[^\w\s]/gi, '').replace(/\b\d+\b/, '');
+  };
+
   const handlePhoneInputChange = (text) => {
     setSoDienThoai(text);
   };
 
-  const xacNhanDiaChi = async() => {
+  const handleDiaChiCuTheChange = async (text) => {
+    setDiaChiCuThe(text);
+
+    if (address.province && address.district && address.wards && text) {
+      const filteredAddress = filterAddress(text);
+      const fullAddress = `${filteredAddress}, ${address.wards}, ${address.district}, ${address.province}`;
+      const coords = await getCoordinatesFromAddress(fullAddress);
+
+      if (!coords) {
+        const fallbackAddress = `${address.wards}, ${address.district}, ${address.province}`;
+        const fallbackCoords = await getCoordinatesFromAddress(fallbackAddress);
+        if (fallbackCoords) {
+          setRegion({
+            latitude: fallbackCoords.latitude,
+            longitude: fallbackCoords.longitude,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          });
+          setShowMap(true);
+          ToastAndroid.show(
+            "Không tìm thấy địa chỉ chính xác, hiển thị vị trí gần đúng",
+            ToastAndroid.SHORT
+          );
+        } else {
+          ToastAndroid.show(
+            "Không tìm thấy vị trí trên bản đồ với địa chỉ đã nhập",
+            ToastAndroid.SHORT
+          );
+          setShowMap(false);
+        }
+      } else {
+        setRegion({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        });
+        setShowMap(true);
+      }
+    } else {
+      setShowMap(false);
+    }
+  };
+
+  const getCoordinatesFromAddress = async (address) => {
+    try {
+      const response = await axios.get(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+          address
+        )}&format=json`
+      );
+      if (response.data.length > 0) {
+        const { lat, lon } = response.data[0];
+        return {
+          latitude: parseFloat(lat),
+          longitude: parseFloat(lon),
+        };
+      }
+    } catch (error) {
+      console.error("Error fetching coordinates:", error);
+    }
+    return null;
+  };
+
+  const xacNhanDiaChi = async () => {
     if (!validatePhoneNumber(sodienthoai)) {
       Alert.alert("Lỗi", "Số điện thoại không hợp lệ");
       return;
     }
-    if (address == "") {
-      Alert.alert("Lỗi", "Vui lòng chọn địa chỉ");
+    if (!address.province || !address.district || !address.wards || !diaChiCuThe) {
+      Alert.alert("Lỗi", "Vui lòng chọn đầy đủ địa chỉ và nhập địa chỉ cụ thể");
       return;
     }
-    updatedFormAddress = {
+
+    const updatedFormAddress = {
       recipient_name: name,
-      street_address: address.district,
+      street_address: `${diaChiCuThe}, ${address.wards}, ${address.district}`,
       city: address.province,
       state: address.wards,
       postal_code: "chưa cập nhật",
       default_address: isEnabled,
       recipient_numberphone: sodienthoai,
     };
-    console.log("updatedFormAddress", updatedFormAddress);
+
     const result = await CreateAddress(updatedFormAddress);
     if (result.success) {
       ToastAndroid.show("Cập nhật địa chỉ thành công", ToastAndroid.SHORT);
@@ -82,151 +162,147 @@ const AddAddress = ({ navigation }) => {
     } else {
       ToastAndroid.show("Cập nhật địa chỉ thất bại", ToastAndroid.SHORT);
     }
-    
   };
+
   const handleDataAndress = (data) => {
-    console.log("data", data);
     setAddress(data);
+    if (diaChiCuThe) {
+      handleDiaChiCuTheChange(diaChiCuThe);
+    }
   };
+
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <TextInput
-          style={styles.input}
-          placeholder="Họ và tên"
-          value={name}
-          onChangeText={(text) => setName(text)}
-          returnKeyType="next"
-          onSubmitEditing={() => phoneRef.current.focus()}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Số điện thoại"
-          value={sodienthoai}
-          onChangeText={handlePhoneInputChange}
-          keyboardType="phone-pad"
-          returnKeyType="next"
-          onSubmitEditing={() => googlePlacesRef.current.focus()}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Địa chỉ cụ thể"
-          value={diaChiCuThe}
-          onChangeText={(text) => setDiaChiCuThe(text)}
-          ref={addressRef}
-        />
-        <View style={styles.addressContainer}>
-          <View style={styles.AddressConfirm}>
-            <Image
-              source={{ uri: "https://iili.io/JzRD1wB.png" }}
-              style={styles.locationicon}
-            />
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={100}
+    >
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.content}>
+          <TextInput
+            style={styles.input}
+            placeholder="Họ và tên"
+            value={name}
+            onChangeText={(text) => setName(text)}
+            returnKeyType="next"
+            onSubmitEditing={() => phoneRef.current.focus()}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Số điện thoại"
+            value={sodienthoai}
+            onChangeText={handlePhoneInputChange}
+            keyboardType="phone-pad"
+            returnKeyType="next"
+            onSubmitEditing={() => googlePlacesRef.current.focus()}
+            ref={phoneRef}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Địa chỉ cụ thể"
+            value={diaChiCuThe}
+            onChangeText={handleDiaChiCuTheChange}
+            ref={addressRef}
+          />
+          <View style={styles.addressContainer}>
             <AddressConfirm sendDataAddress={handleDataAndress} />
           </View>
-        </View>
-      </View>
 
-      <View style={styles.containerSwitch}>
-        <Text style={styles.switchLabel}>Đặt làm địa chỉ mặc định</Text>
-        <Switch
-          trackColor={{ false: "#767577", true: "#81b0ff" }}
-          thumbColor={isEnabled ? "#f5dd4b" : "#f4f3f4"}
-          ios_backgroundColor="#3e3e3e"
-          onValueChange={toggleSwitch}
-          value={isEnabled}
-          style={styles.switchContainer}
-        />
+          {showMap && (
+            <MapView style={styles.map} region={region}>
+              <Marker coordinate={{ latitude: region.latitude, longitude: region.longitude }} />
+            </MapView>
+          )}
+        </View>
+      </ScrollView>
+
+      <View style={styles.bottomContainer}>
+        <View style={styles.containerSwitch}>
+          <Text style={styles.switchLabel}>Đặt làm địa chỉ mặc định</Text>
+          <Switch
+            trackColor={{ false: "#767577", true: "#81b0ff" }}
+            thumbColor={isEnabled ? "#f5dd4b" : "#f4f3f4"}
+            ios_backgroundColor="#3e3e3e"
+            onValueChange={() => setIsEnabled((previousState) => !previousState)}
+            value={isEnabled}
+            style={styles.switchContainer}
+          />
+        </View>
+
+        <TouchableOpacity style={styles.confirmButton} onPress={xacNhanDiaChi}>
+          <Text style={styles.confirmButtonText}>Xác nhận</Text>
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity style={styles.confirmButton} onPress={xacNhanDiaChi}>
-        <Text style={styles.confirmButtonText}>Xác nhận</Text>
-      </TouchableOpacity>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    width: 380,
-    backgroundColor: "#E0E0E0",
+    backgroundColor: "#F5F5F5",
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    alignItems: "center",
-    backgroundColor: "#F9F9F9",
-    height: 100,
-    paddingLeft: 10,
-  },
-  iconContainer: {
-    padding: 10,
-  },
-  title: {
-    fontSize: 25,
-    fontWeight: "800",
-    marginLeft: 10,
+  scrollContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   content: {
-    width: 345,
-    alignSelf: "center",
-    paddingTop: 15,
+    marginVertical: 20,
   },
   input: {
-    width: "100%",
     height: 50,
-    color: "#9B9B9B",
     fontSize: 16,
+    borderColor: "#CCCCCC",
     borderWidth: 1,
-    borderColor: "#E0E0E0",
-    backgroundColor: "#fff",
-    alignSelf: "center",
-    paddingLeft: 10,
-    marginBottom: 10,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    marginBottom: 15,
   },
   addressContainer: {
-    width: "100%",
     borderRadius: 8,
-    height: "55%",
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+  },
+  map: {
+    height: 200,
+    borderRadius: 8,
+    marginVertical: 20,
+  },
+  bottomContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    backgroundColor: "#F5F5F5",
   },
   confirmButton: {
-    width: 343,
-    height: 48,
-    backgroundColor: "#DB3022",
-    alignSelf: "center",
+    height: 50,
+    backgroundColor: "#007AFF",
     borderRadius: 25,
     alignItems: "center",
     justifyContent: "center",
+    marginTop: 20,
   },
   confirmButtonText: {
-    color: "#fff",
-    fontSize: 18,
-  },
-  locationicon: {
-    width: 30,
-    height: 30,
-    resizeMode: "contain",
-    marginLeft: 10,
-    marginTop: 10,
-  },
-  AddressConfirm: {
-    flex: 1,
-    width: "100%",
-    height: "auto",
-  },
-  containerSwitch: {
-    flexDirection: "column",
-    alignItems: "flex-start",
-    justifyContent: "flex-start",
-    paddingLeft: 30,
-  },
-
-  switchLabel: {
-    marginLeft: 0,
+    color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "bold",
   },
+  containerSwitch: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 20,
+  },
+  switchLabel: {
+    fontSize: 16,
+    color: "#333333",
+  },
   switchContainer: {
     transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }],
+  },
+  iconContainer: {
+    padding: 10,
   },
 });
 

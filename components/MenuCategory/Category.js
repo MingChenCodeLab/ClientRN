@@ -1,5 +1,5 @@
 import { faL } from "@fortawesome/free-solid-svg-icons";
-import React, { useLayoutEffect } from "react";
+import React, { useLayoutEffect ,useContext, useMemo } from "react";
 import {
   StyleSheet,
   Text,
@@ -15,13 +15,14 @@ import { useNavigation } from "@react-navigation/native"; // Import useNavigatio
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
+import { Ionicons } from '@expo/vector-icons';
 const WIDTH = Dimensions.get("window").width;
 const Category = ({ route }) => {
   const { categoryData, categoryName } = route.params;
   const navigation = useNavigation();
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerTitle: "Danh mục " + categoryName,
+      headerTitle: categoryName,
       headerLeft: () => (
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -37,174 +38,136 @@ const Category = ({ route }) => {
       ),
     });
   }, []);
-  if (!categoryData || !categoryData.length) {
-    return (
-      <View style={styles.container}>
-        <Image
-          style={styles.iconn}
-          width={200}
-          height={200}
-          source={{
-            uri: "https://iili.io/JuxEicg.png",
-          }}
-        />
-      </View>
-    );
-  }
   const handlePressDetailProduct = (item) => {
     console.log("item", item);
     navigation.navigate("ProductDetail", { product: item });
   };
-  const renderItem = ({ item }) => {
-    let tensp =
-      item.name.length > 10 ? item.name.slice(0, 25) + "..." : item.name;
-    let totalQuantitySold = item.total_quantity_sold;
-    if (totalQuantitySold === null) {
-      totalQuantitySold = 0;
-    } else {
-      totalQuantitySold = parseInt(totalQuantitySold);
-    }
-
-    return (
-      <TouchableOpacity
-        onPress={() => handlePressDetailProduct(item)}
-        style={styles.container}
-      >
-        <View style={styles.shadow}>
-          <Image source={{ uri: item.thumbnail }} style={styles.img} />
-          <Text style={styles.tensp}>{tensp}</Text>
-
+  const renderItem = useMemo(
+    () => ({ item }) => {
+      let tensp = item.name.length > 10 ? item.name.slice(0, 25) + "..." : item.name;
+      let totalQuantitySold = item.total_quantity_sold;
+  
+      if (totalQuantitySold === null) {
+        totalQuantitySold = 0;
+      } else {
+        totalQuantitySold = parseInt(totalQuantitySold);
+      }
+  
+      return (
+        <TouchableOpacity
+          onPress={() => handlePressDetailProduct(item)}
+          style={styles.shoeItem}
+        >
+          <TouchableOpacity style={styles.favoriteButton}>
+            <Ionicons name="heart-outline" size={24} color="#000" />
+          </TouchableOpacity>
+          <Image source={{ uri: item.thumbnail }} style={styles.shoeImage} />
+          <Text style={styles.bestSeller}>BÁN CHẠY</Text>
           <View style={styles.itemsolid}>
             <Text style={styles.daban}>Đã bán</Text>
             <Text style={styles.item_solid_quantity}>{totalQuantitySold}</Text>
           </View>
-          <View style={styles.item_1}>
-            <View style={styles.price}>
-              <Text style={styles.kihieu}>đ</Text>
-              <Text style={styles.item_price}>
-                {parseFloat(item.price).toLocaleString("vi-VN")}
-              </Text>
-            </View>
-            <View></View>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
+          <Text style={styles.shoeName}>{tensp}</Text>
+          <Text style={styles.shoePrice}>
+            $ {parseFloat(item.price).toLocaleString("vi-VN")}
+          </Text>
+          <TouchableOpacity style={styles.addButton}>
+            <Ionicons name="add" size={24} color="#FFF" />
+          </TouchableOpacity>
+        </TouchableOpacity>
+      );
+    },
+    [handlePressDetailProduct, styles] // Mảng phụ thuộc
+  );
+  
 
   return (
     <View style={styles.container}>
-      <FlatGrid
-        scrollEnabled={true}
+      <FlatList
         data={categoryData}
-        renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
-        itemDimension={WIDTH / 3}
+        renderItem={renderItem}
+        numColumns={2}
+        columnWrapperStyle={styles.row}
+        scrollEnabled={false}
+
       />
+
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 10,
-    flex: 1,
-    overflow: "hidden",
-    alignItems: "center",
+    padding: 16,
   },
-
-  shadow: {
-    borderRadius: 10,
-    overflow: "hidden",
-    position: "relative",
-    backgroundColor: "rgba(255, 255, 255, 0.72)",
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 0 },
-  },
-  item_1: {
+  header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginStart: 5,
-    marginEnd: 5,
-    marginTop: 5,
-    marginBottom: 5,
+    marginBottom: 16,
   },
-  img: {
-    aspectRatio: 1,
-    width: "100%",
-    borderTopRightRadius: 10,
-    borderTopLeftRadius: 10,
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
   },
-  tensp: {
-    fontSize: 15,
-    marginBottom: 0,
-    fontWeight: "600",
-    marginVertical: 3,
-    marginLeft: 10,
-    height: 45,
+  seeAll: {
+    color: "#4A7AFF",
+    fontSize: 16,
   },
-  price: {
-    flexDirection: "row",
+  shoeItem: {
+    width: "48%",
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
     alignItems: "center",
-    justifyContent: "flex-start",
-    marginStart: 5,
-    marginEnd: 5,
-    marginLeft: 11,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    marginHorizontal: 4,
   },
-  item_price: {
-    color: "#F60000",
-    fontStyle: "normal",
-    fontWeight: "600",
-
-    fontSize: 15,
-  },
-  kihieu: {
-    color: "red",
-    fontWeight: "600",
-    fontSize: 15,
-    textDecorationLine: "underline",
-    paddingRight: 3,
-  },
-  addToCart: {
+  favoriteButton: {
     position: "absolute",
-    right: 5,
-    bottom: -10,
-
-    borderRadius: 50,
-    borderWidth: 1,
-    width: 25,
-    height: 25,
-    backgroundColor: "white",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 15,
+    right: 12,
+    top: 12,
+    zIndex: 1,
   },
-  iconAddToCart: {
-    fontSize: 15,
-    color: "red",
+  shoeImage: {
+    width: "100%",
+    height: 120,
+    resizeMode: "contain",
+    marginBottom: 8,
   },
-  itemsolid: {
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    alignItems: "center",
-    marginStart: 10,
-    marginEnd: 5,
-    marginTop: 5,
-    marginBottom: 5,
-  },
-  daban: {
+  bestSeller: {
+    backgroundColor: "#4A7AFF",
+    color: "#FFF",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
     fontSize: 12,
-    color: "rgba(0, 0, 0, 0.72)",
-    fontWeight: "600",
-    marginEnd: 5,
+    marginBottom: 4,
   },
-  item_solid_quantity: {
-    fontSize: 12,
-    color: "rgba(0, 0, 0, 0.72)",
-    fontWeight: "600",
-    marginEnd: 5,
+  shoeName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  shoePrice: {
+    fontSize: 14,
+    color: "#4A7AFF",
+    marginBottom: 8,
+  },
+  addButton: {
+    backgroundColor: "#4A7AFF",
+    borderBottomEndRadius: 12,
+    borderTopStartRadius: 12,
+    padding: 8,
+    position: "absolute",
+    bottom: 0,
+    right: 0,
   },
 });
 

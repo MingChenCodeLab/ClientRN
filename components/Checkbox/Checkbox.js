@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   Animated,
 } from "react-native";
-import React, { useRef } from "react";
+import React, { useRef ,useContext } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faCheck } from "@fortawesome/free-solid-svg-icons";
 const Checkbox = ({

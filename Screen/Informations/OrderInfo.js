@@ -1,12 +1,16 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   StyleSheet,
-  ScrollView,
   Text,
   TouchableOpacity,
   Image,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import useAuth from "../../Services/auth.services";
+import TokenStorage from "../../Services/authToken/TokenStorage";
+import { useFocusEffect } from '@react-navigation/native';
+// Icons
 import PENDING from "../../images/1.png";
 import PROCESSING from "../../images/2.png";
 import SHIPPING from "../../images/3.png";
@@ -14,90 +18,80 @@ import SHIPPED from "../../images/4.png";
 import DELIVERED from "../../images/5.png";
 import CANCELED from "../../images/6.png";
 
-import useAuth from "../../Services/auth.services";
-import { useEffect, useState } from "react";
-import { useNavigation } from "@react-navigation/native";
-import { AuthStatus } from "../../Services/AuthContext";
+// Function to get icon based on status ID
+const getIconByStatusId = (statusId) => {
+  switch (statusId) {
+    case 1: return PROCESSING;
+    case 2: return PENDING;
+    case 3: return SHIPPING;
+    case 4: return SHIPPED;
+    case 5: return DELIVERED;
+    case 6: return CANCELED;
+    default: return null;
+  }
+};
 
-export default OrderInfo = () => {
+const OrderInfo = () => {
   const { totalOrderStatus } = useAuth();
   const [totalOrderStatusItem, setTotalOrderStatusItem] = useState([]);
   const navigation = useNavigation();
-  const { state, dispatch } = AuthStatus();
-  const hanldChoThanhToan = (key) => {
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchData = async () => {
+        try {
+          const tokenLoggedIn = await TokenStorage.getToken();
+          if (tokenLoggedIn === null) {
+            console.log("User is not logged in");
+           
+          } else {
+            // Fetch order statuses if logged in
+            const res = await totalOrderStatus();
+            setTotalOrderStatusItem(res.data);
+          }
+        } catch (error) {
+          console.error("Failed to fetch token or data", error);
+        }
+      };
+
+      fetchData();
+    }, [navigation])
+  );
+
+  const handleNavigation = (key) => {
     navigation.navigate("MainTabPurchase", { initialTabIndex: key });
   };
-  // navigation.addListener("focus", () => {
-  //   if (state.isLoggedIn) {
-  //     totalOrderStatus().then((res) => {
-  //       setTotalOrderStatusItem(res.data);
-  //       console.log("res.data");
-  //     });
-  //   }
-  // });
-  useEffect(() => {
-    if (state.isLoggedIn) {
-      totalOrderStatus().then((res) => {
-        setTotalOrderStatusItem(res.data);
-      });
-    }
-  }, [navigation, state.isLoggedIn]);
-  const getIconByStatusId = (statusId) => {
-    switch (statusId) {
-      case 1:
-        return PROCESSING;
-      case 2:
-        return PENDING;
-      case 3:
-        return SHIPPING;
-      case 4:
-        return SHIPPED;
-      case 5:
-        return DELIVERED;
-      case 6:
-        return CANCELED;
-      default:
-        return null;
-    }
-  };
-  return state.isLoggedIn ? (
+
+  return (
     <View style={styles.iconsContainer}>
-      <View>
-        <View style={styles.info}>
-          <Text style={styles.label}>Đơn hàng</Text>
-          <TouchableOpacity
-            onPress={() => {
-              navigation.navigate("MainTabPurchase");
-            }}
-          >
-            <Text style={styles.viewAllOrders}>Xem tất cả đơn hàng {">"}</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={styles.info}>
+        <Text style={styles.label}>Đơn hàng</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("MainTabPurchase")}>
+          <Text style={styles.viewAllOrders}>Xem tất cả đơn hàng </Text>
+        </TouchableOpacity>
       </View>
       <View style={styles.Containerinfo}>
-        {totalOrderStatusItem.map((item, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.iconItem}
-            onPress={() => {
-              hanldChoThanhToan(item.status_id - 1);
-            }}
-          >
-            <Image
-              style={styles.iconImage}
-              source={getIconByStatusId(item.status_id)}
-            />
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{item.total_orders}</Text>
-            </View>
-            <Text style={styles.iconText}>{item.status_name}</Text>
-          </TouchableOpacity>
-        ))}
+        {totalOrderStatusItem.length > 0 ? (
+          totalOrderStatusItem.map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.iconItem}
+              onPress={() => handleNavigation(item.status_id - 1)}
+            >
+              <Image
+                style={styles.iconImage}
+                source={getIconByStatusId(item.status_id)}
+              />
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{item.total_orders}</Text>
+              </View>
+              <Text style={styles.iconText}>{item.status_name}</Text>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <Text style={styles.noOrdersText}>No orders found</Text>
+        )}
       </View>
-    </View>
-  ) : (
-    <View style={styles.check}>
-      <Text style={styles.checkText}>Đăng nhập để xem đơn hàng</Text>
     </View>
   );
 };
@@ -115,17 +109,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     height: 80,
   },
-  check: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    height: 50,
-  },
-  checkText: {
-    fontSize: 16,
-    color: "rgba(166, 179, 185, 0.8)",
-  },
-
   iconsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -154,11 +137,9 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   viewAllOrders: {
-    fontSize: 16,
+    fontSize: 14,
     color: "rgba(166, 179, 185, 0.8)",
     marginHorizontal: 50,
-    justifyContent: "center",
-    alignItems: "center",
     marginLeft: 70,
   },
   info: {
@@ -183,4 +164,12 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 10,
   },
+  noOrdersText: {
+    fontSize: 16,
+    color: "rgba(166, 179, 185, 0.8)",
+    textAlign: "center",
+    marginTop: 20,
+  },
 });
+
+export default OrderInfo;

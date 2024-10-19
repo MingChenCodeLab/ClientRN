@@ -3,43 +3,52 @@ import {
   View,
   Text,
   StyleSheet,
-  StatusBar,
   ActivityIndicator,
+  SafeAreaView,
+  ScrollView
 } from "react-native";
-import ListProduct from "../Products/ListProduct";
-import Notification from "../Notification/Notification";
-
+import ListProduct from "../Products/index";
+import NotificationPermission from "../../Services/Notify/NotificationPermission";
+import useAuth from "../../Services/auth.services";
+import Header from "../../components/Header/Header";
+import { useNetworkStatus } from "../../Services/CheckInternet/index";
+import CustomStatusBar from "../../components/StatusBar/CustomStatusBar";
 export default function Home({ navigation }) {
   const [isLoading, setIsLoading] = useState(true);
-
-  // Giả lập thời gian "loading" bằng cách sử dụng setTimeout
+  const isConnected = useNetworkStatus();
   useEffect(() => {
     setTimeout(() => {
-      setIsLoading(false); // Sau khoảng thời gian "loading", tắt trạng thái isLoading
-    }, 1500); // Giả lập "loading" trong 2 giây, bạn có thể điều chỉnh thời gian tùy ý
+      setIsLoading(false);
+    }, 1500);
   }, []);
 
+
+
   return (
-    <View style={styles.container}>
-      <Notification />
-      <StatusBar backgroundColor="#00BCD4" barStyle="light-content" />
-      {isLoading ? (
-        // Hiển thị phần tử "loading" khi isLoading là true
-        <ActivityIndicator size="large" color="#00BCD4" />
+    <SafeAreaView style={styles.container}>
+      <CustomStatusBar
+        animated={true}
+        backgroundColor="transparent"
+        barStyle={"dark-content"}
+        showHideTransition={"fade"}
+        hidden={false}
+        translucent={true}
+        paddingTop={true}
+      />
+      <NotificationPermission />
+      {/* <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" /> */}
+      <Header navigation={navigation} />
+      {!isConnected ? (
+        <ActivityIndicator size="large" color="#0000ff" />
       ) : (
-        // Hiển thị danh sách sản phẩm khi isLoading là false
         <ListProduct navigation={navigation} />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "rgba(234, 235, 236, 0.72)",
-    alignItems: "center",
-    width: "100%",
-    height: "100%",
   },
 });

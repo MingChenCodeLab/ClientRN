@@ -5,45 +5,48 @@ import {
   ScrollView,
   Pressable,
   Alert,
-  Image,
   ToastAndroid,
-  ImageBackground,
   TouchableOpacity,
 } from "react-native";
-import React, { useState, useEffect, useContext } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
 import { Entypo } from "@expo/vector-icons";
-import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
+import { FontAwesome5 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import useAuth from "../../Services/auth.services";
-import { AuthStatus } from "../../Services/AuthContext";
+
 const ConfirmationOrder = (props) => {
-  const { getDefaultAddress, CreateAddress, Orders } = useAuth();
-  const { Orderdata } = props.route.params;
-  console.log("Orderdata", Orderdata);
+  const { getDefaultAddress, Orders } = useAuth();
   const navigation = useNavigation();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [addresses, setAddresses] = useState([]);
-  const [selectedAddress, setSelectedAdress] = useState("");
-  const [option, setOption] = useState(false);
-  const [selectedOption, setSelectedOption] = useState("cash");
-  const [phivanchuyen, setPhivanchuyen] = useState(10000);
-  const { state, dispatch } = AuthStatus();
-  const [orderSuccess, setOrderSuccess] = useState(false);
-  const [notificationKey, setNotificationKey] = useState(0);
-  const rewardfreightCost = state.UseVoucher.some(
-    (voucher) => voucher.reward_type === 3
-  );
+
+  const { orderData } = props.route.params;
+
+  // Tính tổng tiền hàng dựa trên các sản phẩm trong orderData
+  const calculateTotalItemsPrice = () => {
+    return orderData.reduce(
+      (total, product) => total + parseFloat(product.discountedTotal),
+      0
+    );
+  };
+
+  // Tính tổng số tiền cần thanh toán (bao gồm cả phí vận chuyển)
+  const calculateTotalPayment = () => {
+    return calculateTotalItemsPrice() + formData.freightCost;
+  };
 
   const [formData, setFormData] = useState({
-    cartItems: Orderdata.item_id,
-    cartId: Orderdata.Cart_id,
-    totalPrice: 0,
+    cartItems: orderData.map((product) => product.itemId),
+    cartId: orderData[0].cartId,
+    totalPrice: calculateTotalItemsPrice(), // Tính tổng tiền hàng
     shippingAddressId: "",
     paymentMethodId: 1,
-    voucherIds: [],
-    freightCost: rewardfreightCost ? 0 : 10000,
+    freightCost: 10000,
   });
+
+  const [currentStep, setCurrentStep] = useState(1);
+  const [addresses, setAddresses] = useState([]);
+  const [selectedOption, setSelectedOption] = useState("cash");
+  const [orderSuccess, setOrderSuccess] = useState(false);
+  const [notificationKey, setNotificationKey] = useState(0);
 
   const steps = [
     { title: "Address", content: "Address Form" },
@@ -51,18 +54,6 @@ const ConfirmationOrder = (props) => {
     { title: "Payment", content: "Payment Details" },
     { title: "Place Order", content: "Order Summary" },
   ];
-  const fetchVoucher = () => {
-    if (state.UseVoucher.length > 0) {
-      let voucher_ids = state.UseVoucher.map((voucher) => voucher.voucher_id);
-      console.log(
-        "state.UseVoucher",
-        state.UseVoucher.map((voucher) => voucher.voucher_id)
-      );
-      formData.voucherIds = voucher_ids;
-    } else {
-      formData.voucherIds = [];
-    }
-  };
 
   useEffect(() => {
     const onFocus = async () => {
@@ -73,13 +64,11 @@ const ConfirmationOrder = (props) => {
     return () => {
       unsubscribeFocus();
     };
-  }, [navigation, state.UseVoucher]);
+  }, [navigation]);
 
   const fetchAddresses = async () => {
     try {
       const data = await getDefaultAddress();
-      fetchVoucher();
-
       if (data.status === -1) {
         navigation.navigate("Address");
         ToastAndroid.show(
@@ -87,59 +76,37 @@ const ConfirmationOrder = (props) => {
           ToastAndroid.SHORT
         );
       }
-      if (data.success == true) {
+      if (data.success === true) {
         setAddresses(data.data);
         setFormData({ ...formData, shippingAddressId: data.data[0]?.id });
-        // formData.shippingAddressId = data.data[0]?.id;
-        //  console.log("address", data.data);
       } else {
-        console.log("error fetching address", response);
+        console.log("error fetching address", data);
       }
     } catch (error) {
-      console.log("errror", error);
+      console.log("error", error);
     }
   };
-
   const handlePlaceOrder = async () => {
     try {
       let paymentmethod = 0;
-      console.log("selectedOption", selectedOption);
+      formData.totalPrice = calculateTotalPayment();
+
       if (selectedOption === "card") {
-        formData.totalPrice = calculateTotalPayment();
-        console.log("formDatacard", formData);
         paymentmethod = 2;
-        const rewardType3Exists = state.UseVoucher.some(
-          (voucher) => voucher.reward_type === 3
-        );
-
         navigation.navigate("VerifyVnPayPayMent", {
-          cartItems: Orderdata.item_id,
-          cartId: Orderdata.Cart_id,
-          totalPrice: calculateTotalPayment(),
-          shippingAddressId: addresses[0]?.id,
+          cartItems: formData.cartItems,
+          cartId: formData.cartId,
+          totalPrice: formData.totalPrice,
+          shippingAddressId: formData.shippingAddressId,
           paymentMethodId: paymentmethod,
-          voucherIds: state.UseVoucher.map((voucher) => voucher.voucher_id),
-          freightCost: rewardType3Exists ? 0 : 10000,
+          freightCost: formData.freightCost,
         });
-      }
-      if (selectedOption === "cash") {
-        formData.totalPrice = calculateTotalPayment();
-        console.log("formDatacash", formData);
-        const orderData = await Orders(formData);
-        // const data = await Orders(orderData);
-        console.log("data", orderData);
-        if (orderData.message === "ok") {
-          const usedVoucherIds = state.UseVoucher.map(
-            (voucher) => voucher.voucher_id
-          );
+      } else if (selectedOption === "cash") {
+        console.log("formData", formData);
+        const orderResponse = await Orders(formData);
 
-          // Filter out the used vouchers from the state.UseVoucher array
-          const updatedVouchers = state.UseVoucher.filter(
-            (voucher) => !usedVoucherIds.includes(voucher.voucher_id)
-          );
 
-          // Update the state with the remaining vouchers
-          dispatch({ type: "USE_VOUCHER", payload: updatedVouchers });
+        if (orderResponse) {
           ToastAndroid.show("Đặt hàng thành công", ToastAndroid.SHORT);
           setOrderSuccess(true);
           setNotificationKey((prevKey) => prevKey + 1);
@@ -150,69 +117,8 @@ const ConfirmationOrder = (props) => {
         }
       }
     } catch (error) {
-      console.log("errror", error);
+      console.log("error", error);
     }
-  };
-
-  const Tinhtoantien = ({ item, voucher }) => {
-    let total = 0;
-    if (item?.reward_type === 1) {
-      total = Orderdata.total * (item?.discount_amount / 100);
-    }
-    if (item?.reward_type === 2) {
-      total = Number(item?.discount_amount);
-    }
-    return <Text style={{ fontSize: 10, color: "red" }}>{total}đ</Text>;
-  };
-
-  const TinhGiamPhiVanChuyen = ({ index, item }) => {
-    let total = 0;
-    if (item?.reward_type === 3) {
-      total = 10000;
-    }
-    return (
-      <Text style={{ fontSize: 15, color: "gray" }}>
-        {"-"}
-        {total}đ
-      </Text>
-    );
-  };
-  const Tinhgiamgia = ({ index, item }) => {
-    let total = 0;
-    if (item?.reward_type === 1) {
-      total = Orderdata.total * (item?.discount_amount / 100);
-    }
-    if (item?.reward_type === 2) {
-      total = Number(item?.discount_amount);
-    }
-
-    return (
-      <Text style={{ fontSize: 15, color: "gray" }}>
-        {"-"}
-        {total}đ
-      </Text>
-    );
-  };
-  const calculateTotalPayment = () => {
-    let totalPayment = Orderdata.total;
-
-    totalPayment += phivanchuyen;
-
-    state.UseVoucher.forEach((voucher) => {
-      if (voucher?.reward_type === 1) {
-        const discountAmount =
-          (Orderdata.total * voucher?.discount_amount) / 100;
-        totalPayment -= discountAmount;
-      } else if (voucher?.reward_type === 2) {
-        totalPayment -= voucher?.discount_amount;
-      }
-
-      if (voucher?.reward_type === 3) {
-        totalPayment -= 10000;
-      }
-    });
-
-    return totalPayment;
   };
 
   return (
@@ -383,78 +289,6 @@ const ConfirmationOrder = (props) => {
         <Text style={{ fontSize: 20, fontWeight: "bold" }}>Voucher</Text>
 
         <Pressable
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: "white",
-            padding: 8,
-            gap: 7,
-            borderColor: "#D0D0D0",
-            borderWidth: 1,
-            marginTop: 10,
-          }}
-          onPress={() => {
-            navigation.navigate("CouponOrder");
-          }}
-        >
-          {state.UseVoucher.length > 0 ? (
-            <FontAwesome5
-              name="dot-circle"
-              size={20}
-              color="#008397"
-              onPress={() => setOption(!option)}
-            />
-          ) : (
-            <Entypo
-              onPress={() => setOption(!option)}
-              name="circle"
-              size={20}
-              color="gray"
-            />
-          )}
-          {state.UseVoucher.length > 0 &&
-            state.UseVoucher.map((voucher, index) => (
-              <View key={index}>
-                {voucher?.reward_type === 3 ? (
-                  <Image
-                    source={{
-                      uri: "https://beebot-sg-knowledgecloud.oss-ap-southeast-1.aliyuncs.com/kc/kc-media/kc-oss-1646302396798-image.png",
-                    }}
-                    style={{
-                      width: 100,
-                      height: 30,
-                      resizeMode: "contain",
-                      borderRadius: 8,
-                    }}
-                  />
-                ) : null}
-                {voucher?.reward_type === 2 || voucher?.reward_type === 1 ? (
-                  <ImageBackground
-                    source={{
-                      uri: "https://iili.io/JzQxWnR.png",
-                    }}
-                    style={{
-                      width: 50,
-                      height: 30,
-                      resizeMode: "center",
-                      borderRadius: 8,
-                      borderWidth: 1,
-                      borderColor: "gray",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Tinhtoantien index={index} item={voucher} />
-                  </ImageBackground>
-                ) : null}
-              </View>
-            ))}
-          {state.UseVoucher.length <= 0 ? (
-            <Text style={{ fontSize: 15, color: "gray" }}>Chọn voucher</Text>
-          ) : null}
-        </Pressable>
-
-        <Pressable
           onPress={() => {
             setCurrentStep(2);
           }}
@@ -474,7 +308,7 @@ const ConfirmationOrder = (props) => {
       {currentStep == 2 && (
         <View style={{ marginHorizontal: 20 }}>
           <Text style={{ fontSize: 20, fontWeight: "bold" }}>
-            Select your payment Method
+            Chọn phương thức thanh toán
           </Text>
 
           <View
@@ -559,7 +393,7 @@ const ConfirmationOrder = (props) => {
               marginTop: 15,
             }}
           >
-            <Text>Tiếp tụcw</Text>
+            <Text>Tiếp tục</Text>
           </Pressable>
         </View>
       )}
@@ -567,7 +401,7 @@ const ConfirmationOrder = (props) => {
       {currentStep === 3 &&
         (selectedOption === "cash" || selectedOption === "card") && (
           <View style={{ marginHorizontal: 20 }}>
-            <Text style={{ fontSize: 20, fontWeight: "bold" }}>Order Now</Text>
+            <Text style={{ fontSize: 20, fontWeight: "bold" }}>Đặt hàng ngay</Text>
 
             <View
               style={{
@@ -578,7 +412,6 @@ const ConfirmationOrder = (props) => {
                 marginTop: 10,
               }}
             >
-              <Text>Chi tiết thanh toán {selectedAddress?.name}</Text>
               <View
                 style={{
                   flexDirection: "row",
@@ -592,7 +425,7 @@ const ConfirmationOrder = (props) => {
                 </Text>
 
                 <Text style={{ color: "gray", fontSize: 16 }}>
-                  {Orderdata.total.toLocaleString("vi-VN")}đ
+                  {calculateTotalItemsPrice().toLocaleString("vi-VN")}đ
                 </Text>
               </View>
               <View
@@ -607,61 +440,10 @@ const ConfirmationOrder = (props) => {
                   Phí vận chuyển
                 </Text>
 
-                <Text style={{ color: "gray", fontSize: 16 }}>10.000đ</Text>
+                <Text style={{ color: "gray", fontSize: 16 }}>
+                  {formData.freightCost.toLocaleString("vi-VN")}đ
+                </Text>
               </View>
-              {state.UseVoucher.length > 0 &&
-                state.UseVoucher.map((voucher, index) => (
-                  <View key={index}>
-                    {voucher?.reward_type === 3 ? (
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          marginTop: 3,
-                        }}
-                      >
-                        <Text style={{ fontSize: 15, color: "gray" }}>
-                          Giảm phí vận chuyển
-                        </Text>
-
-                        <TinhGiamPhiVanChuyen index={index} item={voucher} />
-                      </View>
-                    ) : null}
-                    {voucher?.reward_type === 1 ? (
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          marginTop: 3,
-                        }}
-                      >
-                        <Text style={{ fontSize: 15, color: "gray" }}>
-                          Voucher Giảm giá
-                        </Text>
-
-                        {<Tinhgiamgia index={index} item={voucher} />}
-                      </View>
-                    ) : null}
-                    {voucher?.reward_type === 2 ? (
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          marginTop: 3,
-                        }}
-                      >
-                        <Text style={{ fontSize: 15, color: "gray" }}>
-                          Voucher Giảm giá
-                        </Text>
-
-                        {<Tinhgiamgia index={index} item={voucher} />}
-                      </View>
-                    ) : null}
-                  </View>
-                ))}
 
               <View
                 style={{
@@ -678,10 +460,7 @@ const ConfirmationOrder = (props) => {
                 <Text
                   style={{ color: "#C60C30", fontSize: 17, fontWeight: "bold" }}
                 >
-                  {calculateTotalPayment() < 0
-                    ? 0
-                    : calculateTotalPayment().toLocaleString("vi-VN")}
-                  đ
+                  {calculateTotalPayment().toLocaleString("vi-VN")}đ
                 </Text>
               </View>
             </View>
@@ -700,7 +479,7 @@ const ConfirmationOrder = (props) => {
               </Text>
 
               <Text style={{ fontSize: 16, fontWeight: "600", marginTop: 7 }}>
-                {selectedOption == "cash"
+                {selectedOption === "cash"
                   ? "Thanh toán khi nhận hàng"
                   : "UPI/Debit card"}
               </Text>

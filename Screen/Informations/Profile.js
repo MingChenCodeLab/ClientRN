@@ -10,12 +10,12 @@ import Information from "../Informations/Information";
 import OrderInfo from "./OrderInfo";
 import Repurchase from "../Informations/Repurchase";
 import About from "../Informations/About";
-import Notification from "../Notification/Notification";
 
 const Profile = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false); // Thêm refreshing
   const [refreshCounter, setRefreshCounter] = useState(0);
+
   useEffect(() => {
     // Simulate data loading delay (replace with your actual data fetching logic)
     setTimeout(() => {
@@ -29,7 +29,6 @@ const Profile = ({ navigation }) => {
     setRefreshCounter((prevCounter) => prevCounter + 1);
     setTimeout(() => {
       // Sau khi làm mới xong, đánh dấu hoàn thành làm mới
-
       setIsLoading(false);
       setRefreshing(false);
     }, 1500); // Điều chỉnh thời gian làm mới theo nhu cầu của bạn
@@ -52,7 +51,7 @@ const Profile = ({ navigation }) => {
         </View>
       ) : (
         <>
-          <View style={styles.section}>
+          <View style={styles.sectionInformation}>
             <Information
               key={`information-${refreshCounter}`}
               navigation={navigation}
@@ -81,10 +80,23 @@ export default Profile;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#ECF0F1", 
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  section: {
+    marginVertical: 5,  
+    marginHorizontal: 10, 
+    padding: 5, 
+    backgroundColor: "#FFF",  
+    borderRadius: 10,  
+    elevation: 3,  
+    shadowColor: "#000",  
+    shadowOffset: { width: 0, height: 2 },  
+    shadowOpacity: 0.1,  
+    shadowRadius: 4, 
   },
 });

@@ -6,7 +6,7 @@ import {
   Image,
   ScrollView,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState ,useContext } from "react";
 import ModalBottom from "../../Screen/Modal/modal.bottom.payment";
 import { PaymentIcon } from "react-native-payment-icons";
 import { Ionicons } from "@expo/vector-icons";

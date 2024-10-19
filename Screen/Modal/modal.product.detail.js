@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   View,
   Text,
@@ -6,18 +6,14 @@ import {
   TouchableOpacity,
   Modal,
   Dimensions,
-  Image,
   Pressable,
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
-import DropDownPicker from "react-native-dropdown-picker";
-import { MaterialIcons, Ionicons, Feather } from "@expo/vector-icons";
-import useAuth from "../../Services/auth.services";
-import { AuthStatus } from "../../Services/AuthContext";
-import DataLoadingCart from "../../components/loading/DataLoadingCart";
-import { soluonggiohang } from "../../Services/Redux/action/Actions";
-import { useDispatch, useSelector } from "react-redux";
+import { Feather } from "@expo/vector-icons";
+import CartServices from "../../Services/CartServices";
+import authHeader from "../../Services/HeaderAuth/auth.header";
+import { AuthContext } from "../../Services/AuthContext";
 
 const COLORS = {
   black: "#3C3C3C",
@@ -25,203 +21,113 @@ const COLORS = {
   white: "#FFFFFF",
   red: "#EE4B2B",
 };
-const { height, width } = Dimensions.get("window");
 
-export default function ModalBottom(props) {
-  const total_cart = useSelector((state) => state.Reducers.total);
-  const { closeDrawer, openDrawer, dataprod } = props;
-  const [cartUpdate, setCartUpdate] = useState(0);
-  const { UpdateCreateCart } = useAuth();
-  const { state } = AuthStatus();
-  // dữ liệu là
-  const [selectedSize, setSelectedSize] = useState(null);
+const { width } = Dimensions.get("window");
+
+export default function ModalBottomOrder({ closeDrawer, openDrawer, dataprod }) {
+  const { authState } = useContext(AuthContext);
+  const [selectedDetailId, setSelectedDetailId] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [formData, setFormData] = useState({
     product_detail_id: null,
-    quantity: quantity,
+    quantity: 1,
   });
-  const dispatchRedux = useDispatch();
+
+  const handleSizeSelection = (detailId, size, color) => {
+    setSelectedDetailId(detailId);
+    setFormData((prevFormData) => ({
+      ...prevFormData,
+      product_detail_id: detailId,
+    }));
+  };
+
+  const handleQuantityChange = (newQuantity) => {
+    setQuantity(newQuantity);
+    setFormData((prevFormData) => ({
+      ...prevFormData,
+      quantity: newQuantity,
+    }));
+  };
+
   const addCart = async () => {
-    if (formData.product_detail_id === null) {
-      alert("Vui lòng chọn size");
+    if (!formData.product_detail_id) {
+      alert("Vui lòng chọn size và màu");
       return;
     }
-    console.log("formdata", formData.quantity);
-    const data = await UpdateCreateCart(
-      state.userInfo.cart_id,
-      formData.product_detail_id,
-      quantity
-    );
-    console.log(data);
-    if (data) {
-      alert("Thêm vào giỏ hàng thành công");
-      setCartUpdate(cartUpdate + 1);
-      dispatchRedux(soluonggiohang(total_cart + 1));
+    try {
+      const token = await authHeader();
+      console.log("token", token);
+      const data = await CartServices.addtocart(token, authState.userInfo.cart_id, formData.product_detail_id, formData.quantity);
+      if (data) {
+        alert("Thêm vào giỏ hàng thành công");
+        closeDrawer();  // Đóng modal sau khi thêm thành công
+      }
+    } catch (error) {
+      console.error("Add to cart failed:", error);
+      alert("Thêm vào giỏ hàng không thành công");
     }
   };
 
-  const handleSizeSelection = (detail, size, color) => {
-    setSelectedSize(size);
-    setFormData({ ...formData, product_detail_id: detail });
-    console.log(detail, size, color, quantity);
-  };
   return (
     <View style={styles.container}>
-      <DataLoadingCart key={cartUpdate} />
       <Modal
         animationType="slide"
         transparent={true}
         visible={openDrawer}
         onRequestClose={closeDrawer}
       >
-        <Pressable
-          style={styles.modalContainer}
-          onPress={closeDrawer}
-        ></Pressable>
-        <SafeAreaView
-          style={{
-            flex: 1,
-          }}
-        >
-          <Pressable
-            style={{
-              flex: 1,
-              backgroundColor: "rgba(0, 0, 0, 0.2)",
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: COLORS.white,
-                borderTopRightRadius: 36,
-                borderTopLeftRadius: 36,
-                paddingHorizontal: 22,
-                paddingVertical: 22,
-                position: "absolute",
-                width: "100%",
-                bottom: 0,
-              }}
-            >
-              <View style={{ marginVertical: 22 }}>
-                <Text style={styles.h4}>Chọn Size:</Text>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    marginVertical: 18,
-                  }}
-                >
-                  {dataprod.ProductDetails.map((detail, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={[
-                        styles.checkboxContainer,
-                        selectedSize === detail.size && styles.selectedCheckbox,
-                      ]}
-                      onPress={() =>
-                        handleSizeSelection(
-                          detail.detail_id,
-                          detail.size,
-                          detail.color
-                        )
-                      }
-                    >
-                      <Text
-                        style={[
-                          selectedSize === detail.size && styles.checkboxText,
-                        ]}
-                      >
-                        {detail.size}
-                      </Text>
-                      <Text
-                        style={[
-                          selectedSize === detail.size && styles.checkboxText,
-                        ]}
-                      >
-                        {detail.color}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+        <SafeAreaView style={styles.safeArea}>
+          <Pressable style={styles.pressableArea} onPress={closeDrawer}>
+            <View style={styles.modalContent}>
+              {/* Phần chọn size */}
+              <Text style={styles.h4}>Chọn Size:</Text>
+              <View style={styles.sizeSelector}>
+                {dataprod.ProductDetails.map((detail, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.checkboxContainer,
+                      selectedDetailId === detail.detail_id && styles.selectedCheckbox,
+                    ]}
+                    onPress={() => handleSizeSelection(detail.detail_id, detail.size, detail.color)}
+                  >
+                    <Text style={[
+                      selectedDetailId === detail.detail_id && styles.checkboxText,
+                    ]}>
+                      {detail.size} - {detail.color}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
 
+              {/* Phần chọn số lượng */}
               <Text style={styles.h4}>Qty</Text>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginVertical: 6,
-                }}
-              >
-                <View
-                  style={{
-                    backgroundColor: COLORS.gray,
-                    height: 48,
-                    width: 134,
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    paddingHorizontal: 12,
-                    borderRadius: 24,
+              <View style={styles.quantitySelector}>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (quantity > 1) {
+                      handleQuantityChange(quantity - 1);
+                    }
                   }}
+                  style={styles.quantityButton}
                 >
-                  <TouchableOpacity
-                    onPress={() => {
-                      if (quantity > 1) {
-                        setQuantity(quantity - 1);
-                      }
-                    }}
-                    style={{
-                      height: 32,
-                      width: 32,
-                      borderRadius: 16,
-                      backgroundColor: COLORS.white,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Feather name="minus" size={24} color={COLORS.black} />
-                  </TouchableOpacity>
-                  <Text style={styles.body3}>{quantity}</Text>
-
-                  <TouchableOpacity
-                    onPress={() => {
-                      setQuantity((prevQuantity) => prevQuantity + 1);
-                    }}
-                    style={{
-                      height: 32,
-                      width: 32,
-                      borderRadius: 16,
-                      backgroundColor: COLORS.white,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Feather name="plus" size={24} color={COLORS.black} />
-                  </TouchableOpacity>
-                </View>
-
-                {/* <View style={{ flexDirection: "column" }}>
-                  <Text style={styles.body4}>Tạm tính</Text>
-                  <Text style={styles.h3}>23000đ</Text>
-                </View> */}
+                  <Feather name="minus" size={24} color={COLORS.black} />
+                </TouchableOpacity>
+                <Text style={styles.body3}>{quantity}</Text>
+                <TouchableOpacity
+                  onPress={() => handleQuantityChange(quantity + 1)}
+                  style={styles.quantityButton}
+                >
+                  <Feather name="plus" size={24} color={COLORS.black} />
+                </TouchableOpacity>
               </View>
 
               <TouchableOpacity
                 style={styles.button}
-                onPress={() => {
-                  addCart();
-                }}
+                onPress={addCart}
               >
-                <Feather name="shopping-bag" size={24} color={COLORS.white} />
-
-                <Text
-                  style={{
-                    color: COLORS.white,
-                    marginLeft: 12,
-                  }}
-                >
-                  Thêm vào giỏ hàng
-                </Text>
+                <Feather name="send" size={24} color={COLORS.white} />
+                <Text style={styles.buttonText}>Thêm vào giỏ ngay</Text>
               </TouchableOpacity>
             </View>
           </Pressable>
@@ -232,10 +138,33 @@ export default function ModalBottom(props) {
 }
 
 const styles = StyleSheet.create({
-  modalContainer: {
+  container: {
     flex: 1,
-    justifyContent: "flex-end",
+  },
+  safeArea: {
+    flex: 1,
+  },
+  pressableArea: {
+    flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.2)",
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    borderTopRightRadius: 36,
+    borderTopLeftRadius: 36,
+    paddingHorizontal: 22,
+    paddingVertical: 22,
+    position: "absolute",
+    width: "100%",
+    bottom: 0,
+  },
+  h4: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  sizeSelector: {
+    flexDirection: "row",
+    marginVertical: 18,
   },
   checkboxContainer: {
     alignItems: "center",
@@ -256,6 +185,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "bold",
   },
+  quantitySelector: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginVertical: 6,
+    backgroundColor: COLORS.gray,
+    height: 48,
+    width: 134,
+    borderRadius: 24,
+    paddingHorizontal: 12,
+  },
+  quantityButton: {
+    height: 32,
+    width: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.white,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   button: {
     marginTop: 12,
     height: 60,
@@ -264,6 +212,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: COLORS.black,
+    backgroundColor: COLORS.red,
+  },
+  buttonText: {
+    color: COLORS.white,
+    marginLeft: 12,
   },
 });

@@ -9,13 +9,18 @@ import {
 } from "react-native";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 import { faCartShopping, faEllipsis } from "@fortawesome/free-solid-svg-icons";
+
 export default function FavoriteProduct(props) {
   const { dataProd, handlePress } = props;
+
   const fun_handlePress = () => {
-    handlePress ? handlePress(dataProd) : null;
+    if (handlePress) {
+      handlePress(dataProd);
+    }
   };
+
   let tensp =
-    dataProd.name.length > 10
+    dataProd.name.length > 25
       ? dataProd.name.slice(0, 25) + "..."
       : dataProd.name;
 
@@ -24,33 +29,34 @@ export default function FavoriteProduct(props) {
       <View style={styles.shadow}>
         <Image source={{ uri: dataProd.thumbnail }} style={styles.img} />
         <Text style={styles.tensp}>{tensp}</Text>
-        <View style={styles.item_1}>
-        <View style={styles.price}>
-          <Text style={styles.kihieu}>đ</Text>
-          <Text style={styles.item_price}>{parseFloat(dataProd.price).toLocaleString('vi-VN')}</Text>
-        </View>
-        
-        <View >
-          <TouchableOpacity style={styles.addToCart} onPress={()=>{alert('Thêm vào giỏ hàng')}}>
+        <View style={styles.itemContainer}>
+          <View style={styles.priceContainer}>
+            <Text style={styles.currencySymbol}>đ</Text>
+            <Text style={styles.price}>
+              {parseFloat(dataProd.price).toLocaleString("vi-VN")}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.addToCartButton}
+            onPress={() => alert("Thêm vào giỏ hàng")}
+          >
             <FontAwesomeIcon
-              style={styles.iconAddToCart}
               icon={faCartShopping}
               size={20}
-              color="rgba(177, 177, 177, 0.72)"
+              color="#FFFFFF"
             />
           </TouchableOpacity>
         </View>
-        </View>
-        <View >
-          <TouchableOpacity style={styles.menu} onPress={()=>{alert('Thêm vào giỏ hàng')}}>
-            <FontAwesomeIcon
-              style={styles.itemmenu}
-              icon={faEllipsis}
-              size={25}
-              color="rgba(177, 177, 177, 0.72)"
-            />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.menuButton}
+          onPress={() => alert("Tùy chọn thêm")}
+        >
+          <FontAwesomeIcon
+            icon={faEllipsis}
+            size={25}
+            color="#B1B1B1"
+          />
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
@@ -60,84 +66,59 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: 10,
     flex: 1,
-    overflow: 'hidden',
+    overflow: "hidden",
+    margin: 10,
   },
-  
   shadow: {
     borderRadius: 10,
-    overflow: 'hidden',
-    position: 'relative',
-    backgroundColor: 'rgba(255, 255, 255, 0.72)',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 0 },
-  },
-  item_1: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginStart: 5,
-    marginEnd: 5,
-    marginTop: 5,
-    marginBottom: 5,
+    backgroundColor: "#FFFFFF",
+    elevation: 5,
+    overflow: "hidden",
   },
   img: {
-    aspectRatio: 1,
-    width: '100%',
-    borderTopRightRadius: 10,
-    borderTopLeftRadius: 10,
+    width: "100%",
+    height: Dimensions.get("window").width / 2,
+    resizeMode: "cover",
   },
   tensp: {
-    fontSize: 15,
-    marginBottom: 0,
-    fontWeight: '600',
-    marginVertical: 3,
-    marginLeft: 10,
-    height: 45,
+    fontSize: 16,
+    fontWeight: "bold",
+    margin: 10,
+    color: "#333333",
+  },
+  itemContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginHorizontal: 10,
+    marginBottom: 10,
+  },
+  priceContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  currencySymbol: {
+    color: "#F60000",
+    fontWeight: "bold",
+    fontSize: 16,
+    marginRight: 5,
   },
   price: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    marginStart: 5,
-    marginEnd: 5,
-    marginTop: 5,
-    marginLeft: 11,
-   
+    color: "#F60000",
+    fontWeight: "bold",
+    fontSize: 16,
   },
-  item_price: {
-    color: '#F60000',
-    fontStyle: 'normal',
-    fontWeight: '600',
-    
-    fontSize: 15,
+  addToCartButton: {
+    backgroundColor: "#F60000",
+    padding: 10,
+    borderRadius: 25,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 3,
   },
-  kihieu: {
-    color: 'red',
-    fontWeight: '600',
-    fontSize: 15,
-    textDecorationLine: 'underline',
-    paddingRight: 3,
+  menuButton: {
+    position: "absolute",
+    top: 10,
+    right: 10,
   },
-  addToCart: {
-    position: 'absolute',
-    right: 5,
-    marginTop: 10,
-    borderRadius: 50,
-    borderWidth: 1,
-    width: 25,
-    height: 25,
-    backgroundColor: 'white',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 15,
-  },
-  iconAddToCart: {
-    fontSize: 15,
-    color: 'red',
-  },
-  menu:{
-    marginTop: 5,
-    marginLeft: 10,
-  }
 });

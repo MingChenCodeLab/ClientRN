@@ -1,51 +1,27 @@
-// CartBadge.js
-import React, { useEffect, useState } from "react";
-import { View, Text } from "react-native";
-import { useSelector } from "react-redux";
+import React, { useContext } from "react";
+import { View } from "react-native";
+import { Badge } from "react-native-elements";
+import { AuthContext } from "../../Services/AuthContext";
 
 const CartBadge = () => {
-  const [totalCart, setTotalCart] = useState(0);
-  const info = useSelector((state) => state.Reducers.total);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        if (info > 0) {
-          setTotalCart(info);
-        } else {
-          setTotalCart(0);
-        }
-      } catch (error) {
-        console.log("Error cart1:", error);
-      }
-    };
-
-    fetchData();
-  }, [info]);
+  const { cartState } = useContext(AuthContext);
+  const cartCount = cartState.infoCart?.total_cart_items || 0;
 
   return (
-    totalCart > 0 && (
+    cartCount > 0 && (
       <View
         style={{
           position: "absolute",
-          right: -6,
-          top: -3,
-          backgroundColor: "red",
-          borderRadius: 8.5,
-          width: 17,
-          height: 17,
-          justifyContent: "center",
-          alignItems: "center",
+          right: -8,
+          top: -2,
         }}
       >
-        <Text
-          style={{
-            fontSize: 10,
-            color: "#FFFFFF",
-          }}
-        >
-          {totalCart}
-        </Text>
+        <Badge
+          value={cartCount > 99 ? "99+" : cartCount}
+          status="error"
+          containerStyle={{ position: 'absolute', top: -4, right: -4 }}
+          textStyle={{ color: "white", fontWeight: "bold" }}
+        />
       </View>
     )
   );

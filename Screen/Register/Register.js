@@ -1,418 +1,395 @@
-import React, { Component, useState, useLayoutEffect } from "react";
+import React, { useState, useContext } from "react";
 import {
+  StyleSheet,
   View,
   Text,
   TextInput,
-  StyleSheet,
   TouchableOpacity,
-  Image,
   ToastAndroid,
-  ActivityIndicator,
-  Modal,
+  Image,
 } from "react-native";
-import logo from "../../assets/images/logo.png";
-import Icon from "react-native-vector-icons/FontAwesome";
-import { MaterialIcons } from "@expo/vector-icons";
-import useAuth from "../../Services/auth.services";
-import FontAwesome from "react-native-vector-icons/FontAwesome";
-export default function Register({ navigation }) {
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerTitle: "Đăng ký",
-      headerLeft: () => (
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{ marginLeft: 5, marginRight: 10 }}
-        >
-          <FontAwesome
-            name="arrow-left"
-            size={24}
-            color="black"
-            style={styles.icon}
-          />
-        </TouchableOpacity>
-      ),
-    });
-  }, []);
-  const { registerUser } = useAuth();
-  const [formData, setFormData] = useState({
-    fullname: "",
-    email: "",
-    phone: "",
-    username: "",
-    password: "",
-  });
-  const [loading, setLoading] = useState(false);
-  const [passwordVisible, setPasswordVisible] = useState(false);
-  const [agreeToTerms, setAgreeToTerms] = useState(false);
-  const regemail = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-  const handleRegister = (e) => {
-    e.preventDefault();
-    if (!regemail.test(formData.email)) {
-      ToastAndroid.show("Email không hợp lệ", ToastAndroid.SHORT);
-      return false;
-    }
-    if (formData.username.length < 6) {
-      ToastAndroid.show("Username phải có ít nhất 6 ký tự", ToastAndroid.SHORT);
-      return false;
-    }
-    if (formData.password.length < 6) {
-      ToastAndroid.show("Mật khẩu phải có ít nhất 6 ký tự", ToastAndroid.SHORT);
-      return false;
-    }
-    if (!agreeToTerms) {
-      ToastAndroid.show("Bạn chưa đồng ý với điều khoản", ToastAndroid.SHORT);
-      return false;
-    } else {
-      setLoading(true);
-      setTimeout(() => {
-        setLoading(false);
-        registerUser(formData).then((result) => {
-          console.log("result", result);
-          if (result&& !result.success) {
-            ToastAndroid.show(result.message, ToastAndroid.SHORT);
-            return false;
-          }
-          if (result && result.success) {
-            ToastAndroid.show(result.message, ToastAndroid.SHORT);
-            ToastAndroid.show("Hãy xác nhận tài khoản trong Gmail Cảm ơn!", ToastAndroid.SHORT);
-             navigation.navigate("Login");
-            return true;
-          }
-         
-        }
-        );
+import { useForm, Controller } from "react-hook-form";
+import * as yup from "yup";
+import { yupResolver } from "@hookform/resolvers/yup";
+import Checkbox from "expo-checkbox";
+import { AuthContext } from "../../Services/AuthContext";
+import Icon from "react-native-vector-icons/FontAwesome"; // Import FontAwesome icons
+import eyeIcon from "../../images/eys.jpg";
+import logo from "../../assets/images/logo1.png";
+import BackButton from "../../components/Header/BackButton";
+import CustomStatusBar from '../../components/StatusBar/CustomStatusBar';
+import { LinearGradient } from 'expo-linear-gradient';
 
-      }, 1000);
-   
+const schema = yup.object().shape({
+  fullName: yup.string().required("Họ và tên là bắt buộc"),
+  username: yup
+    .string()
+    .required("Tên người dùng là bắt buộc")
+    .test(
+      "isValid",
+      "Nhập tên người dùng hợp lệ",
+      (value) => /^[a-zA-Z0-9_-]{3,16}$/.test(value) 
+    ),
+  email: yup
+    .string()
+    .email("Địa chỉ email không hợp lệ")
+    .required("Email là bắt buộc"),
+  password: yup.string().required("Mật khẩu là bắt buộc"),
+  confirmPassword: yup
+    .string()
+    .oneOf([yup.ref('password'), null], 'Mật khẩu xác nhận không khớp')
+    .required("Xác nhận mật khẩu là bắt buộc"),
+});
+
+
+
+export default function Register({ navigation }) {
+  const { signUp } = useContext(AuthContext);
+  const [agree, setAgree] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(schema),
+  });
+
+  const onSubmit = async (data) => {
+    if (!agree) {
+      ToastAndroid.show("Bạn phải đồng ý với điều khoản", ToastAndroid.SHORT);
+      return;
     }
+  
+    const { confirmPassword, ...submissionData } = data;
+  
+    try {
+      const result = await signUp(submissionData); 
+      if (result) {
+        console.log("result: " + JSON.stringify(result));
+      }
+    } catch (error) {
+      console.error(error);
+      ToastAndroid.show("Đã xảy ra lỗi", ToastAndroid.SHORT);
+    }
+  };
+  
+
+  const BackHandler = () => {
+    navigation.navigate("Home");
+    return true;
   };
 
   return (
     <View style={styles.container}>
-      <Modal transparent={true} animationType="slide" visible={loading}>
-        <View style={styles.modalContainer}>
-          <ActivityIndicator size="large" color="#DFDFDF" />
-        </View>
-      </Modal>
-
-      <Image source={logo} style={styles.logo} resizeMode="contain" />
-      <Text style={styles.nameapp}>
-      Nike Sneaker<Text style={styles.shop}> Shop</Text>
-      </Text>
-      <View style={styles.inputContainer}>
-        <TextInput
-          onChangeText={(text) => setFormData({ ...formData, fullname: text })}
-          value={formData.fullname}
-          style={styles.input}
-          placeholder="Enter Your FullName"
-        />
-      </View>
-      <View style={styles.inputContainer}>
-        <TextInput
-          onChangeText={(text) => setFormData({ ...formData, email: text })}
-          value={formData.email}
-          style={styles.input}
-          placeholder="Enter Your Email"
-        />
-      </View>
-      <View style={styles.inputContainer}>
-        <TextInput
-          onChangeText={(text) => setFormData({ ...formData, username: text })}
-          value={formData.username}
-          style={styles.input}
-          placeholder="Enter Your Username"
-        />
-      </View>
-      <View style={styles.inputContainer_pass}>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Your Password"
-          onChangeText={(text) => setFormData({ ...formData, password: text })}
-          value={formData.password}
-          secureTextEntry={!passwordVisible}
-        />
-        <TouchableOpacity
-          style={styles.passwordVisible}
-          onPress={() => setPasswordVisible(!passwordVisible)}
-        >
-          <Icon
-            name={passwordVisible ? "eye-slash" : "eye"}
-            size={20}
-            color="gray"
-            style={styles.icon}
+      <CustomStatusBar
+        animated={true}
+        backgroundColor="transparent"
+        barStyle={"dark-content"}
+        showHideTransition={"fade"}
+        hidden={false}
+        translucent={true}
+        paddingTop={true}
+      />
+      <BackButton onPress={BackHandler} />
+      <Image source={logo} style={styles.logo} resizeMode="cover" />
+      <View style={styles.form}>
+        <View style={styles.inputWrapper}>
+          <Icon name="user" size={20} style={styles.icon} />
+          <Controller
+            control={control}
+            name="fullName"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <>
+                <TextInput
+                  style={styles.input}
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                  placeholder="Họ và tên"
+                  autoCapitalize="none"
+                />
+                {errors.fullName && (
+                  <Text style={styles.errorText}>{errors.fullName.message}</Text>
+                )}
+              </>
+            )}
           />
+        </View>
+        <View style={styles.inputWrapper}>
+          <Icon name="user" size={20} style={styles.icon} />
+          <Controller
+            control={control}
+            name="username"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <>
+                <TextInput
+                  style={styles.input}
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                  placeholder="Tên người dùng"
+                  autoCapitalize="none"
+                />
+                {errors.username && (
+                  <Text style={styles.errorText}>{errors.username.message}</Text>
+                )}
+              </>
+            )}
+          />
+        </View>
+        <View style={styles.inputWrapper}>
+          <Icon name="envelope" size={20} style={styles.icon} />
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <>
+                <TextInput
+                  style={styles.input}
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                  placeholder="Email"
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
+                {errors.email && (
+                  <Text style={styles.errorText}>{errors.email.message}</Text>
+                )}
+              </>
+            )}
+          />
+        </View>
+        <View style={styles.inputWrapper}>
+          <Icon name="lock" size={20} style={styles.icon} />
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <View style={styles.passwordWrapper}>
+                <TextInput
+                  style={styles.input}
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                  placeholder="Mật khẩu"
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                />
+                {errors.password && (
+                  <Text style={styles.errorText}>{errors.password.message}</Text>
+                )}
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeButton}
+                >
+                  <Image
+                    source={eyeIcon}
+                    style={[styles.eyeIcon, showPassword && styles.eyeIconVisible]}
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+          />
+        </View>
+        <View style={styles.inputWrapper}>
+          <Icon name="lock" size={20} style={styles.icon} />
+          <Controller
+            control={control}
+            name="confirmPassword"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <View style={styles.passwordWrapper}>
+                <TextInput
+                  style={styles.input}
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                  placeholder="Xác nhận mật khẩu"
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                />
+                {errors.confirmPassword && (
+                  <Text style={styles.errorText}>{errors.confirmPassword.message}</Text>
+                )}
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeButton}
+                >
+                  <Image
+                    source={eyeIcon}
+                    style={[styles.eyeIcon, showPassword && styles.eyeIconVisible]}
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+          />
+        </View>
+
+      </View>
+      <View style={styles.footer}>
+        <Checkbox
+          style={styles.checkbox}
+          value={agree}
+          onValueChange={() => setAgree(!agree)}
+          color={agree ? "#4630EB" : undefined}
+        />
+        <Text style={styles.agreeText}>Đồng ý với điều khoản</Text>
+      </View>
+      <TouchableOpacity onPress={handleSubmit(onSubmit)} style={styles.loginButton}>
+        <Text style={styles.loginButtonText}>Đăng ký</Text>
+      </TouchableOpacity>
+      <View style={styles.separator}>
+        <View style={styles.lineWrapper}>
+          <LinearGradient
+            colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.1)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.lineGradient}
+          />
+        </View>
+        <Text style={styles.orText}>Hoặc</Text>
+        <View style={styles.lineWrapper}>
+          <LinearGradient
+            colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.1)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.lineGradient}
+          />
+        </View>
+      </View>
+      <View style={styles.register}>
+        <Text style={styles.registerText}>Đã có tài khoản? </Text>
+        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+          <Text style={styles.registerLink}>Đăng nhập</Text>
         </TouchableOpacity>
       </View>
-      <View style={styles.checkBoxContainer}>
-        <TouchableOpacity
-          style={styles.checkBoxContainer}
-          onPress={() => setAgreeToTerms(!agreeToTerms)}
-        >
-          {agreeToTerms ? (
-            <MaterialIcons
-              name="check-box"
-              size={24}
-              color="#0E64D2"
-              style={styles.icon_checkbox}
-            />
-          ) : (
-            <Icon
-              name="square-o"
-              size={24}
-              color="gray"
-              style={styles.icon_checkbox}
-            />
-          )}
-        </TouchableOpacity>
-        <Text style={styles.text_checkbox}>
-          I agree to Terms and Conditions
-        </Text>
-      </View>
-      <View style={styles.inputContainerButton}>
-        <TouchableOpacity style={styles.register} onPress={handleRegister}>
-          <Text style={styles.TextRegister}>Register</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.container_line}>
-        <View style={styles.line_left} />
-        <Text style={styles.text_line}>Or</Text>
-        <View style={styles.line_right} />
-      </View>
-      <View style={styles.createaccount}>
-        <Text style={styles.texttt}>
-          Đã có tài khoản{". "}
-          </Text>
-          <TouchableOpacity style={styles.createaccount1} onPress={()=>navigation.navigate("Login")}>
-            <Text style={styles.texttt1}>Đăng nhập ngay</Text>
-          </TouchableOpacity>
-       
-      </View>
-      {/* <View style={styles.inputContainerButton}>
-        <TouchableOpacity style={styles.registerbyfb}>
-          <View style={styles.fbIconContainer}>
-            <Image
-              source={{
-                uri: "https://cdn-icons-png.flaticon.com/512/5968/5968764.png",
-              }}
-              style={styles.fbIcon}
-            />
-          </View>
-          <Text style={styles.TextRegister}>Signup with Facebook</Text>
-        </TouchableOpacity>
-      </View> */}
-      {/* <View style={styles.inputContainerButton}>
-        <TouchableOpacity style={styles.registerbygoogle}>
-          <View style={styles.ggIconContainer}>
-            <Image
-              source={{
-                uri: "https://www.nicepng.com/png/full/133-1334497_google-favicon-vector-google-g-logo-png.png",
-              }}
-              style={styles.ggIcon}
-            />
-          </View>
-          <Text style={styles.TextRegisterGoogle}>Signup with Google</Text>
-        </TouchableOpacity>
-      </View> */}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: "#fff",
     alignItems: "center",
-  },
-  inputContainer: {
-    width: "75%",
-    marginBottom: 20,
-  },
-  inputContainer_pass: {
-    width: "75%",
-    marginBottom: 10,
-  },
-  inputContainerButton: {
-    width: "75%",
-    marginBottom: 10,
-    marginTop: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  label: {
-    fontSize: 35,
-    fontWeight: "bold",
-    marginBottom: 5,
-    alignItems: "center",
-    justifyContent: "center",
-    textAlign: "center",
-  },
-  input: {
-    width: "100%",
-    height: 50,
-    borderColor: "gray",
-    borderWidth: 1,
-    padding: 12,
-    borderRadius: 10,
-    fontSize: 17,
-  },
-  passwordVisible: {
-    position: "absolute",
-    right: 15,
-    top: 15,
-    justifyContent: "center",
-    textAlign: "center",
-  },
-  register: {
-    backgroundColor: "#0E64D2",
-    borderRadius: 20,
-    width: "100%",
-    height: 45,
-    alignItems: "center",
-    justifyContent: "center",
-    textAlign: "center",
-    fontWeight: "bold",
-    fontSize: 29,
-  },
-  registerbyfb: {
-    width: "100%",
-    height: 45,
-    borderRadius: 20,
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    backgroundColor: "#1877F2",
-    textAlign: "center",
-    justifyContent: "center",
-  },
-  fbIconContainer: {
-    alignItems: "center",
-    position: "relative",
-    right: 20,
-    justifyContent: "center",
-    top: -2,
-  },
-  fbIcon: {
-    width: 30,
-    height: 30,
-  },
-  registerbygoogle: {
-    width: "80%",
-    height: 45,
-    borderRadius: 20,
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    borderColor: "gray",
-    borderWidth: 1,
-    textAlign: "center",
-    justifyContent: "center",
-  },
-  ggIconContainer: {
-    alignItems: "center",
-    position: "relative",
-    right: 30,
-    justifyContent: "center",
-    top: 0,
-  },
-  ggIcon: {
-    width: 35,
-    height: 35,
-  },
-  TextRegister: {
-    color: "#fff",
-    fontSize: 17,
-    fontWeight: "bold",
-    alignItems: "center",
-    justifyContent: "center",
-    textAlign: "center",
-  },
-  TextRegisterGoogle: {
-    color: "#787878",
-    fontSize: 17,
-    fontWeight: "bold",
-    alignItems: "center",
-    justifyContent: "center",
-    textAlign: "center",
-  },
-  container_line: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  line_left: {
-    flex: 1,
-    height: 2,
-    backgroundColor: "rgba(0, 0, 0, 0.2)",
-    marginLeft: 55,
-  },
-  line_right: {
-    flex: 1,
-    height: 2,
-    backgroundColor: "rgba(0, 0, 0, 0.2)",
-    marginRight: 55,
-  },
-  text_line: {
-    marginHorizontal: 10,
-    fontSize: 16,
-    color: "rgba(0, 0, 0, 0.5)",
-    fontWeight: "bold",
-  },
-  checkBoxContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 0,
-  },
-  icon_checkbox: {
-    marginRight: 10,
-    width: 24,
-    opacity: 0.8,
-  },
-  text_checkbox: {
-    fontSize: 16,
-    color: "#768487",
-    
-    
-  },
-  icon: {
-    fontSize: 20,
-    color: "#7DDDFF",
-    marginTop: 0,
   },
   logo: {
-    width: 90,
-    height: 90,
-    marginTop: 10,
+    width: 130,
+    height: 130,
+    marginTop: 20,
   },
-  nameapp: {
-    fontSize: 30,
-    textAlign: "center",
-    fontWeight: "bold",
-    marginBottom: 10,
+  form: {
+    marginTop: 5,
+    width: 300,
   },
-  shop: {
-    color: "rgba(255, 198, 0, 1)",
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
-  },
-  texttt1: {
-    fontSize: 16,
-    color: "#0E64D2",
-    fontWeight: "bold",
-    textDecorationLine: "underline",
-  },
-  createaccount: {
+  inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    marginTop: 10,
+    borderWidth: 1,
+    borderColor: "gray",
+    borderRadius: 10,
+    marginTop: 20,
+    paddingHorizontal: 10,
+    height: 50,
+    backgroundColor: "#F7F7F9",
   },
-  
+  icon: {
+    marginRight: 5,
+    color: "gray",
+  },
+  input: {
+    flex: 1,
+    height: "100%",
+    paddingHorizontal: 10,
+  },
+  errorText: {
+    color: "red",
+    fontSize: 12,
+    top: 50,
+    position: "absolute",
+    left: 0,
+  },
+  passwordWrapper: {
+    flex: 1,
+    position: "relative",
+  },
+  eyeButton: {
+    position: "absolute",
+    right: 0,
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 5,
+  },
+  eyeIcon: {
+    width: 22,
+    height: 22,
+  },
+  eyeIconVisible: {
+    opacity: 0.3,
+  },
+  footer: {
+    marginTop: 15,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  checkbox: {
+    marginRight: 10,
+  },
+  agreeText: {
+    marginTop: 2,
+  },
+  loginButton: {
+    marginTop: 25,
+    backgroundColor: "#0D6EFD",
+    borderRadius: 15,
+    width: 300,
+    height: 45,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loginButtonText: {
+    color: "white",
+    fontSize: 15,
+  },
+  separator: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+    justifyContent: "center",
+    marginVertical: 20,
+  },
+  lineWrapper: {
+    flex: 1,
+    alignItems: "center",
+    marginHorizontal: 20,
+  },
+  lineGradient: {
+    height: 1,
+    width: '100%',
+  },
+  orText: {
+    marginHorizontal: 10,
+    color: 'gray',
+  },
+  register: {
+    alignItems: "center",
+    flexDirection: "row",
+    marginTop: 10,
+    width: '100%',
+    position: 'absolute',
+    bottom: 0,
+    backgroundColor: '#F7F7F9',
+    paddingVertical: 10,
+    justifyContent: 'center',
+  },
+  registerText: {
+    color: 'gray',
+  },
+  registerLink: {
+    color: '#007BFF',
+    fontWeight: 'bold',
+  },
 });

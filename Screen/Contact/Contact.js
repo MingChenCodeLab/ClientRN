@@ -87,22 +87,6 @@ const Contact = () => {
           React Native{"\n"} React Navigation{"\n"} Axios
         </Text>
       </Text>
-      <Text style={{fontSize:20, padding:15, color:'red'}}>Các thành viên tham gia:</Text>
-      <FlatList
-        horizontal={false}
-        numColumns={2} 
-        style={{ width: "100%", flexWrap: "wrap-reverse" }}
-        data={membersData}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={{ width: "50%" }}>
-            <Text style={[styles.description]}>{item.name}</Text>
-          </TouchableOpacity>
-        )}
-        ItemSeparatorComponent={() => (
-          <View style={{ width: "100%", height: 8 }} /> 
-        )}
-      />
     </ScrollView>
   );
 };

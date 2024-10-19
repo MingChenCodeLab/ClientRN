@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect ,useContext } from "react";
 import {
   useWindowDimensions,
   View,
@@ -84,17 +84,6 @@ const MainTabPurchase = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => {
-            navigation.navigate("Cart");
-          }}
-        >
-          <FontAwesome name="arrow-left" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerText}>Đơn mua</Text>
-        <View style={{ width: 24 }} />
-      </View>
       <TabView
         navigationState={{ index, routes }}
         renderScene={renderScene}

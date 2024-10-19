@@ -1,37 +1,38 @@
 {
   "expo": {
-    "name": "ShopBanGiayUIMY",
-    "slug": "ShopBanGiayUIMY",
+    "name": "ShopNike",
+    "slug": "shopnike",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icons/icon.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/icons/splash.png",
+      "image": "./assets/images/logo/nike2.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
     "ios": {
       "supportsTablet": true
     },
     "android": {
-      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icons/adaptive-icon.png",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.huyph20687.ShopBanGiayUIMY"
+      "assetBundlePatterns": [
+        "assets/images/*",
+        "assets/icons/*"
+      ],
+      "package": "com.huyph20687.shopnike"
     },
     "web": {
-      "favicon": "./assets/icons/favicon.png"
+      "favicon": "./assets/favicon.png"
     },
     "extra": {
       "eas": {
-        "projectId": "c423deee-7c74-45b4-b243-f998bb7ff6fb"
+        "projectId": "ff2dc26f-d620-4475-839e-72c7426067e4"
       }
-    }
+    },
+    "owner": "huyph20687"
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState, Component, useLayoutEffect, useEffect } from "react";
+import React, { useState, Component, useLayoutEffect, useEffect, useContext } from "react";
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import ModalCoupon from "./modal.coupon";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import CouponComponent from "../../components/Coupon/CouponComponent";
 import useAuth from "../../Services/auth.services";
-import { AuthStatus } from "../../Services/AuthContext";
+import { AuthContext } from "../../Services/AuthContext";
 import FlashMessage, {
   showMessage,
   renderMessage,
@@ -26,18 +26,17 @@ export default function Coupon({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [isclick, setIsClick] = useState(false);
   const { GetVoucher, search_voucher_and_add } = useAuth();
-  const { state, dispatch } = AuthStatus();
+  const { state, dispatch } = useContext(AuthContext);
 
-  const fetchdata=()=>{
-    state.isLoggedIn
-    ? GetVoucher()
+  const fetchdata = () => {
+     GetVoucher()
         .then((result) => {
           setData(result);
         })
         .catch((error) => {
           console.error(error);
         })
-    : null;
+    
   }
   useEffect(() => {
     fetchdata();
@@ -64,60 +63,61 @@ export default function Coupon({ navigation }) {
   const fun_handlePress = (item) => {
     setIsClick(!isclick);
   };
- 
+
   const handlePresSearch = () => {
-   const time= setTimeout(() => {
+    const time = setTimeout(() => {
       fetchdata();
     }, 1000);
-   
-  };
-  return state.isLoggedIn ? (
-    <ScrollView style={styles.container}>
-     
-      <View style={styles.modal}>
-        <ModalCoupon
-          check={isclick}
-          handlePress={() => setIsClick(false)}
-          fun_search={handlePresSearch}
-        />
-      </View>
 
-      <View style={styles.header}>
-      
-        <Pressable style={styles.textHeader} onPress={fun_handlePress}>
-          <Image
-            source={{ uri: "https://iili.io/JqAuyDN.png" }}
-            style={styles.img}
-          />
-          <Text style={styles.text}>Nhập mã voucher</Text>
-        </Pressable>
-      </View>
-  
-      <View>
-        {data &&
-          data.map((item, index) => (
-            <CouponComponent
-              key={index}
-              dataVouchers={item}
-              fun_={() => handlePresDetailProduct(item)}
-            />
-          ))}
-      </View>
-    </ScrollView>
-  ) : (
-    <View style={styles.error}>
-      <Text style={{ fontSize: 20, fontWeight: "bold" }}>
-        Bạn cần đăng nhập để xem !
-      </Text>
-    </View>
-  );
+  };
+  return
+  // state.isLoggedInContext ? (
+  //   <ScrollView style={styles.container}>
+
+  //     <View style={styles.modal}>
+  //       <ModalCoupon
+  //         check={isclick}
+  //         handlePress={() => setIsClick(false)}
+  //         fun_search={handlePresSearch}
+  //       />
+  //     </View>
+
+  //     <View style={styles.header}>
+
+  //       <Pressable style={styles.textHeader} onPress={fun_handlePress}>
+  //         <Image
+  //           source={{ uri: "https://iili.io/JqAuyDN.png" }}
+  //           style={styles.img}
+  //         />
+  //         <Text style={styles.text}>Nhập mã voucher</Text>
+  //       </Pressable>
+  //     </View>
+
+  //     <View>
+  //       {data &&
+  //         data.map((item, index) => (
+  //           <CouponComponent
+  //             key={index}
+  //             dataVouchers={item}
+  //             fun_={() => handlePresDetailProduct(item)}
+  //           />
+  //         ))}
+  //     </View>
+  //   </ScrollView>
+  // ) : (
+  <View style={styles.error}>
+    <Text style={{ fontSize: 20, fontWeight: "bold" }}>
+      Bạn cần đăng nhập để xem !
+    </Text>
+  </View>
+
 }
 const styles = StyleSheet.create({
   error: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  
+
   },
   container: {
     backgroundColor: "rgba(216, 234, 245, 0.8)",

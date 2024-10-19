@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect ,useContext } from "react";
 import { View, StyleSheet, SafeAreaView } from "react-native";
-import CpnProductDetail from "../../components/Product/CpnProductDetail";
+import CpnProductDetail from "../../components/Product/ProductDetail";
 
 const ProductDetail = ({ route, navigation }) => {
   const { product } = route.params;
@@ -11,6 +11,10 @@ const ProductDetail = ({ route, navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});
 
 export default ProductDetail;

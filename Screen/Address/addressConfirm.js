@@ -26,11 +26,6 @@ const AddressConfirm = (props) => {
 
   useEffect(() => {
     if (selectedProvince && selectedDistrict && selectedWards) {
-      console.log("Selected items:", {
-        province: selectedProvince,
-        district: selectedDistrict,
-        wards: selectedWards,
-      });
       sendDataAddress({
         province: selectedProvince,
         district: selectedDistrict,
@@ -51,41 +46,30 @@ const AddressConfirm = (props) => {
   };
 
   const handleProvinceSelection = (value, name) => {
-    try {
-      setDistricts([]); // Clear districts when province changes
-      setWards([]); // Clear wards when province changes
-      setSelectedProvince(name);
-      setCurrentStep(1);
-      GetDistricts(value);
-    } catch (error) {
-      console.error("Error fetching province search data:", error);
-    }
+    setDistricts([]);
+    setWards([]);
+    setSelectedProvince(name);
+    setCurrentStep(1);
+    GetDistricts(value);
   };
 
   const handleDistrictSelection = (value, name) => {
-    try {
-      setWards([]); // Clear wards when district changes
-      setSelectedDistrict(name);
-      setCurrentStep(2);
-      GetWards(value);
-    } catch (error) {
-      console.error("Error fetching district search data:", error);
-    }
+    setWards([]);
+    setSelectedDistrict(name);
+    setCurrentStep(2);
+    GetWards(value);
   };
+
   const handleWardsSelection = (value, name) => {
-    try {
-      setCurrentStep(3);
-      setSelectedWards(name);
-    } catch (error) {
-      console.error("Error fetching district search data:", error);
-    }
+    setSelectedWards(name);
+    setCurrentStep(3);
   };
 
   const GetDistricts = (code) => {
     axios
       .get(`https://provinces.open-api.vn/api/p/${code}?depth=2`)
       .then((response) => {
-        setDistricts(response.data);
+        setDistricts(response.data.districts);
       })
       .catch((error) => {
         console.error("Error fetching district data:", error);
@@ -94,9 +78,9 @@ const AddressConfirm = (props) => {
 
   const GetWards = (code) => {
     axios
-      .get(`https://provinces.open-api.vn/api/p/${code}?depth=3`)
+      .get(`https://provinces.open-api.vn/api/d/${code}?depth=2`)
       .then((response) => {
-        setWards(response.data.districts[0].wards);
+        setWards(response.data.wards);
       })
       .catch((error) => {
         ToastAndroid.show(
@@ -108,7 +92,7 @@ const AddressConfirm = (props) => {
 
   const renderSelectedItems = () => {
     return (
-      <View style={{ flexDirection: "column", flexWrap: "wrap" }}>
+      <View style={styles.selectedItemsContainer}>
         {selectedProvince && (
           <TouchableOpacity
             style={styles.selectedItem}
@@ -172,21 +156,10 @@ const AddressConfirm = (props) => {
     switch (currentStep) {
       case 0:
         return (
-          <ScrollView>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 200,
-                  backgroundColor: "rgba(55, 255, 6, 0.8)",
-                  marginRight: 5,
-                  borderWidth: 1,
-                  borderColor: "white",
-                  padding: 10,
-                }}
-              />
-              <Text>Chọn Tỉnh/Thành phố</Text>
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <View style={styles.selectionHeader}>
+              <View style={styles.selectionDot} />
+              <Text style={styles.selectionText}>Chọn Tỉnh/Thành phố</Text>
             </View>
 
             {provinces.map((province) => (
@@ -197,32 +170,21 @@ const AddressConfirm = (props) => {
                   handleProvinceSelection(province.code, province.name)
                 }
               >
-                <Text>{province.name}</Text>
+                <Text style={styles.selectableItemText}>{province.name}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
         );
       case 1:
         return (
-          <ScrollView>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 200,
-                  backgroundColor: "rgba(55, 255, 6, 0.8)",
-                  marginRight: 5,
-                  borderWidth: 1,
-                  borderColor: "white",
-                  padding: 10,
-                }}
-              />
-              <Text>Chọn Quận/Huyện</Text>
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <View style={styles.selectionHeader}>
+              <View style={styles.selectionDot} />
+              <Text style={styles.selectionText}>Chọn Quận/Huyện</Text>
             </View>
 
-            {districts.districts &&
-              districts.districts.map((district) => (
+            {districts &&
+              districts.map((district) => (
                 <TouchableOpacity
                   key={district.code}
                   style={styles.selectableItem}
@@ -230,28 +192,17 @@ const AddressConfirm = (props) => {
                     handleDistrictSelection(district.code, district.name)
                   }
                 >
-                  <Text>{district.name}</Text>
+                  <Text style={styles.selectableItemText}>{district.name}</Text>
                 </TouchableOpacity>
               ))}
           </ScrollView>
         );
       case 2:
         return (
-          <ScrollView>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 200,
-                  backgroundColor: "rgba(55, 255, 6, 0.8)",
-                  marginRight: 5,
-                  borderWidth: 1,
-                  borderColor: "white",
-                  padding: 10,
-                }}
-              />
-              <Text>Chọn Phường/Xã</Text>
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <View style={styles.selectionHeader}>
+              <View style={styles.selectionDot} />
+              <Text style={styles.selectionText}>Chọn Phường/Xã</Text>
             </View>
 
             {wards &&
@@ -261,7 +212,7 @@ const AddressConfirm = (props) => {
                   style={styles.selectableItem}
                   onPress={() => handleWardsSelection(ward.code, ward.name)}
                 >
-                  <Text>{ward.name}</Text>
+                  <Text style={styles.selectableItemText}>{ward.name}</Text>
                 </TouchableOpacity>
               ))}
           </ScrollView>
@@ -270,6 +221,7 @@ const AddressConfirm = (props) => {
         return null;
     }
   };
+
   return (
     <View style={{ flex: 1 }}>
       {renderSelectedItems()}
@@ -279,38 +231,66 @@ const AddressConfirm = (props) => {
 };
 
 const styles = StyleSheet.create({
-  selectedItem: {
-    borderRadius: 5,
-    backgroundColor: "rgba(39, 217, 245, 0.8)",
-    margin: 5,
+  selectedItemsContainer: {
     padding: 10,
-    width: "97%",
+    backgroundColor: "#f0f4f7",
+    borderBottomWidth: 1,
+    borderColor: "#d1d8de",
+  },
+  selectedItem: {
+    borderRadius: 8,
+    backgroundColor: "#007aff",
+    marginVertical: 5,
+    padding: 15,
+    elevation: 3,
   },
   selectedItemText: {
-    fontSize: 16,
-    color: "rgba(255, 93, 0, 0.8)",
-    paddingHorizontal: 30,
+    fontSize: 18,
+    color: "#ffffff",
   },
   selectableItem: {
-    padding: 10,
-    margin: 5,
-    backgroundColor: "rgba(39, 217, 245, 0.8)",
-    borderRadius: 5,
-    width: 300,
-    height: 50,
+    padding: 20,
+    marginVertical: 5,
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
+    elevation: 2,
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
-
+  selectableItemText: {
+    fontSize: 18,
+    color: "#333333",
+  },
+  scrollContainer: {
+    padding: 15,
+  },
   itemContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
-
   nextIcon: {
-    width: 30,
+    width: 20,
+    height: 20,
+    tintColor: "#ffffff",
+    marginLeft: 10,
+  },
+  selectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  selectionDot: {
+    width: 10,
     height: 10,
-    marginLeft: 20,
-    position: "absolute",
-    left: "80%",
+    borderRadius: 5,
+    backgroundColor: "#34c759",
+    marginRight: 10,
+  },
+  selectionText: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#007aff",
   },
 });
+
 export default AddressConfirm;

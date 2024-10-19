@@ -1,61 +1,48 @@
-import React, { useEffect } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { AuthStatus, AuthProvider } from "./Services/AuthContext";
-import AppNavigator from "./AppNavigator";
-import useAuth from "./Services/auth.services";
-import { Provider } from "react-redux";
-import { store } from "./Services/Redux/store";
-import { useDispatch, useSelector } from "react-redux";
 
+import React, { useState } from 'react';
+import {
+  Button,
+  Platform,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { AuthProvider } from "./Services/AuthContext";
+import AppNavigator from "./AppNavigator";
+import CustomStatusBar from './components/StatusBar/CustomStatusBar';
+const MainApp = () => {
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <CustomStatusBar
+        animated={true}
+        backgroundColor="transparent"
+        barStyle={"dark-content"}
+        showHideTransition={"fade"}
+        hidden={false}
+        translucent={true}
+      />
+      <AppNavigator />
+    </SafeAreaView>
+  );
+};
 const App = () => {
   return (
-    <Provider store={store}>
-      <AuthProvider>
-        <MainApp />
-      </AuthProvider>
-    </Provider>
+    <AuthProvider>
+      <MainApp />
+    </AuthProvider>
   );
 };
 
-const MainApp = () => {
-  const { InfoAuth, getTotalCart } = useAuth();
-  const { dispatch } = AuthStatus();
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: '#ECF0F1',
 
-  const fetchData = async () => {
-    try {
-      const data = await InfoAuth();
-      const result = await getTotalCart();
-
-      //
-
-      if (result) {
-        dispatch({ type: "INFOCART", payload: result });
-      }
-      if (data) {
-        dispatch({ type: "USERINFO", payload: data });
-      }
-    } catch (error) {
-      console.error("Error fetching data1:", error);
-    }
-  };
-  useEffect(() => {
-    const checkLoginStatus = async () => {
-      try {
-        const isLoggedIn = await AsyncStorage.getItem("isLoggedIn");
-        if (isLoggedIn === "true") {
-          fetchData();
-          const user = await AsyncStorage.getItem("user_id");
-          dispatch({ type: "LOGIN", payload: JSON.parse(user) });
-        }
-      } catch (error) {
-        console.error("Error reading data from AsyncStorage:", error);
-      }
-    };
-
-    checkLoginStatus();
-  }, []);
-
-  return <AppNavigator />;
-};
+  },
+});
 
 export default App;

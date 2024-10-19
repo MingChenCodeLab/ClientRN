@@ -6,7 +6,6 @@ import {
   Dimensions,
   RefreshControl,
   SafeAreaView,
-  StatusBar,
   ToastAndroid,
   Animated,
   Text,

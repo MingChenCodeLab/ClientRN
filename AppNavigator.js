@@ -3,20 +3,20 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Register from "./Screen/Register/Register";
 import Login from "./Screen/Login/Login";
 import ProductDetail from "./Screen/Products/ProductDetail";
-import SplashStore from "./Screen/Splash/SplashStore";
+import OnBoardingScreen from "./Screen/Splash/OnBoardingScreen";
 import Setting from "./Screen/Setting/Setting";
 import ResetPassword from "./Screen/SecurityAccount/ResetPassword";
 import FormSecurity from "./Screen/SecurityAccount/FormSecurity/FormSecurity";
 import PasswordNew from "./Screen/SecurityAccount/PasswordNew";
 import Coupon from "./Screen/Coupons/Coupon";
-import CpnProductDetail from "./components/Product/CpnProductDetail";
+import CpnProductDetail from "./components/Product/ProductDetail";
 import Address from "./Screen/Informations/Address";
 import Category from "./components/MenuCategory/Category";
 import OrderDetail from "./Screen/Order/OrderDetail";
 import Payment from "./Screen/Payment/Payment";
 import PaymentMethod from "./Screen/Payment/PaymentMethod";
 const Stack = createNativeStackNavigator();
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useContext } from "react";
 import AccountInfo from "./Screen/Accountinfomation/Accountinfo";
 import LikeProducts from "./Screen/Informations/LikeProducts";
 import Profile from "./Screen/Informations/Profile";
@@ -40,21 +40,26 @@ import About from "./Screen/Informations/About";
 export default function AppNavigator() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="SplashStore">
+
+      <Stack.Navigator initialRouteName="OnBoardingScreen">
         <Stack.Screen
           name="BottomTabNavigation"
-          component={BottomTabNavigation}
+          children={() => <BottomTabNavigation />}
           options={{
             headerShown: false,
           }}
         />
         <Stack.Screen
-          name="SplashStore"
-          component={SplashStore}
+          name="OnBoardingScreen"
+          component={OnBoardingScreen}
           options={{ headerShown: false }}
         />
-        <Stack.Screen name="Login" component={Login} />
-        <Stack.Screen name="Register" component={Register} />
+        <Stack.Screen name="Login" component={Login} options={{
+          headerShown: false,
+        }} />
+        <Stack.Screen name="Register" component={Register} options={{
+          headerShown: false,
+        }} />
         <Stack.Screen
           name="ProductDetail"
           component={ProductDetail}
@@ -130,7 +135,7 @@ export default function AppNavigator() {
         <Stack.Screen
           name="MainTabPurchase"
           component={MainTabPurchase}
-          options={{ headerShown: false }}
+          options={{headerTitle:' Đơn hàng'}}
         />
         <Stack.Screen
           name="StatusOrder"

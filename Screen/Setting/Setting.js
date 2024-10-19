@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect } from "react";
+import React, { useState, useLayoutEffect ,useContext } from "react";
 import {
   StyleSheet,
   View,
@@ -9,22 +9,24 @@ import {
   Alert,
 } from "react-native";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
-import { AuthStatus } from "../../Services/AuthContext";
+import { AuthContext } from "../../Services/AuthContext";
 import LoadingScreen from "../LoadingScreen/LoadingScreen";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const Setting = ({ isVisible, navigation }) => {
-  const { state, dispatch } = AuthStatus();
+  const {authState, authDispatch ,cartDispatch} = useContext(AuthContext);
   const [isloading, setIsloading] = useState(false);
+
   const logout = async () => {
     // Xóa trạng thái đăng nhập khỏi AsyncStorage khi người dùng đăng xuất
-    await AsyncStorage.removeItem("isLoggedIn");
     await AsyncStorage.removeItem("user_id");
-    await AsyncStorage.removeItem("accesstoken");
-    dispatch({ type: "LOGOUT" });
+    await AsyncStorage.removeItem("userToken");
+    console.log("AsyncStorage Setting")
+    authDispatch({ type: "SIGN_OUT" });
+    cartDispatch({ type: 'INFOCART', payload: {} });
     setIsloading(true);
     setTimeout(() => {
       setIsloading(false);
-      navigation.replace("SplashStore");
+      navigation.replace("OnBoardingScreen");
     }, 2000);
   };
   const handleNavigation = (screenName) => {

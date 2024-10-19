@@ -4,45 +4,43 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
-  Button,
 } from "react-native";
 import React from "react";
 
 const Repurchase = () => {
   return (
-    <View  style={styles.containers}>
-        {/* <View style={styles.itemcontainer}
-        >
-          <Image
-        style={{ width: 30, height: 30, marginRight: 23 }}
-        source={{ uri: "https://iili.io/JdjjLmv.png" }}
-      />
-      <Text style={{ fontSize: 25 }}>Mua lại</Text>
-        </View>
-      <View>
-        <Text style={{ fontSize: 20, color: "red", marginLeft: 10 }}>
-           
-        </Text>
-      </View> */}
+    <View style={styles.container}>
+      <TouchableOpacity style={styles.itemContainer}>
+        <Image
+          style={styles.icon}
+          source={{ uri: "https://iili.io/JdjjLmv.png" }}
+        />
+        <Text style={styles.text}>Mua lại</Text>
+      </TouchableOpacity>
     </View>
   );
 };
 
 export default Repurchase;
+
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: "#EEE8E8",
-    paddingVertical: 10,
-    width: "100%",
-    height: 100,
-    backgroundColor: "#fff",
-    evation: 5,
-    marginTop: 5,
+    borderRadius: 8,
+    marginVertical: 8,
+    marginHorizontal: 16,
   },
-  itemcontainer:{
+  itemContainer: {
     flexDirection: "row",
-    paddingHorizontal: 5,
-    borderBottomWidth: 0.1,
-  }
-})
+    alignItems: "center",
+  },
+  icon: {
+    width: 25,
+    height: 25,
+    marginRight: 10,
+  },
+  text: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#000000",
+  },
+});

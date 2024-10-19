@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect ,useContext } from "react";
 import { View, Text, StyleSheet, Animated, Easing, Dimensions ,Image} from "react-native";
 import { BarCodeScanner } from "expo-barcode-scanner";
 import { PermissionsAndroid, Platform } from "react-native";

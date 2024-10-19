@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useEffect } from "react";
+import React, { useState, useLayoutEffect, useEffect ,useContext } from "react";
 import {
   StyleSheet,
   View,
@@ -8,15 +8,14 @@ import {
   Alert
 } from "react-native";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
-import { AuthStatus } from "../../Services/AuthContext";
+import { AuthContext } from "../../Services/AuthContext";
 import Dialog from "react-native-dialog";
 
-import RNPickerSelect from "react-native-picker-select";
 const AccountInfo = ({ isVisible, navigation }) => {
-  const { state, dispatch } = AuthStatus();
+  const {authState, dispatch } = useContext(AuthContext);
   
 
-  const [info, setInfo] = useState(state.userInfo);
+  const [info, setInfo] = useState(authState.userInfo);
 
   let date = new Date(info.date_of_birth);
   // khi cập nhật thông tin user thì phải cập nhật cả state vì nó lưu thông tin user_id
@@ -131,14 +130,14 @@ const AccountInfo = ({ isVisible, navigation }) => {
   // };
 
   useEffect(() => {
-    setInfo(state.userInfo);
-  }, [state.userInfo]);
+    setInfo(authState.userInfo);
+  }, [authState.userInfo]);
   return (
     <View style={styles.container}>
       <View style={styles.info}>
         <TouchableOpacity
           onPress={() => {
-            navigation.navigate("InfoUser", { info: state.userInfo });
+            navigation.navigate("InfoUser", { info: authState.userInfo });
           }}
           style={styles.item}
         >

@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect } from "react";
+import React, { useState, useLayoutEffect ,useContext } from "react";
 import {
   StyleSheet,
   View,
@@ -13,11 +13,11 @@ import RNPickerSelect from "react-native-picker-select";
 import Icon from "react-native-vector-icons/AntDesign";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import { useNavigation } from "@react-navigation/native";
-import { AuthStatus } from "../../Services/AuthContext";
+import { AuthContext } from "../../Services/AuthContext";
 import useAuth from "../../Services/auth.services";
 const InfoUser = (props) => {
   const navigation = useNavigation();
-  const { state, dispatch } = AuthStatus();
+  const {authState, authDispatch } = useContext(AuthContext);
   const { info } = props.route.params;
   const [name, setName] = useState(info?.full_name || "");
   const [phone, setPhone] = useState(info?.phone || "");
@@ -45,7 +45,7 @@ const InfoUser = (props) => {
   }, []);
   const onChange = (event, selectedDate) => {
     const currentDate = selectedDate || date;
-    setShow(Platform.OS === "ios");
+    
     setDate(currentDate);
   };
 
@@ -83,9 +83,9 @@ const InfoUser = (props) => {
       user_id: info.user_id,
       username: info.username,
     };
-    dispatch({ type: "USERINFO", payload: dataUser });
+    authDispatch({ type: "USER_INFO", payload: dataUser });
     console.log(dataUser);
-    console.log(state.userInfo);
+    console.log(authState.userInfo);
     const dataUserUpdate = {
       full_name: name,
       phone: phone,

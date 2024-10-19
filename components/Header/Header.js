@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect ,useContext } from "react";
 import {
   View,
   TextInput,
   TouchableOpacity,
   SafeAreaView,
   Dimensions,
-  StatusBar,
   TouchableWithoutFeedback,
   Text,
 } from "react-native";
@@ -16,30 +15,14 @@ import {
   faShoppingCart,
   faBell,
 } from "@fortawesome/free-solid-svg-icons";
+import { Ionicons } from '@expo/vector-icons';
+import CartBadge from "../Cart/CartBadge";
 
 const { width } = Dimensions.get("window");
-import { AuthStatus } from "../../Services/AuthContext";
-import useAuth from "../../Services/auth.services";
+import { AuthContext } from "../../Services/AuthContext";
 const Header = (props) => {
   const { navigation } = props;
-  const [totalCart, setTotalCart] = useState(0);
-  const { getTotalCart } = useAuth();
-  const { state } = AuthStatus();
-  const fetchDataCart = async () => {
-    try {
-      if (state.isLoggedIn) {
-        const data = await getTotalCart();
-        if (data) {
-          setTotalCart(data[0].total_cart_items);
-        }
-      }
-    } catch (error) {
-      console.log("Error cart2:", error);
-    }
-  };
-  useEffect(() => {
-    fetchDataCart();
-  }, []);
+
   const handlePress = () => {
     navigation.navigate("Cart");
   };
@@ -98,18 +81,10 @@ const Header = (props) => {
               handlePress();
             }}
           >
-            {totalCart > 0 ? (
-              <View style={styles.count_cart}>
-                <Text style={styles.count_cart_total}>{totalCart}</Text>
-              </View>
-            ) : null}
+            <CartBadge />
 
-            <FontAwesomeIcon
-              icon={faShoppingCart}
-              size={24}
-              color="#363636"
-              style={styles.iconitemcart}
-            />
+            
+            <Ionicons name="basket-outline" size={30} color="black" />
           </TouchableOpacity>
         </View>
       </View>
@@ -135,7 +110,7 @@ const styles = {
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#f7f7f9",
     borderRadius: 10,
     paddingHorizontal: 10,
     borderWidth: 1,
@@ -158,7 +133,7 @@ const styles = {
   },
   icon: {
     width: 30,
-    height: 25,
+    height: 30,
     alignSelf: "center",
     color: "white",
   },
@@ -180,14 +155,15 @@ const styles = {
     position: "absolute",
     borderRadius: 200,
     zIndex: 999,
-    top: -13,
-    right: -5,
+    top: -6,
+    right: -8,
     backgroundColor: "red",
-    width: "auto",
-    padding: 2,
+    minWidth: 20,
+   alignItems: "center",
     height: 21,
     borderWidth: 1,
     borderColor: "#fff",
+    justifyContent: 'center',
   },
   count_notify: {
     position: "absolute",
@@ -207,7 +183,8 @@ const styles = {
     color: "#fff",
     fontSize: 10,
     fontWeight: "bold",
-    paddingHorizontal: 5,
+    width:"auto",
+    
   },
   count_notify_total: { color: "#fff", fontSize: 10, fontWeight: "bold" },
 };
